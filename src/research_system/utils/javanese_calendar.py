@@ -335,6 +335,12 @@ def javanese_day_profile(value: date | datetime | str) -> JavaneseDayProfile:
         for step in range(1, 4)
     )
     selapan_day = identity.days_since_epoch % SELAPAN_CYCLE_DAYS + 1
+    watak_profile = get_watak_profile(identity.gregorian_date)
+    supported_events = ("nikah", "rumah", "usaha", "tanam")
+    event_snapshot = ", ".join(
+        f"{event} {'baik' if hari_baik_advice(identity.gregorian_date, event).is_good else 'tidak'}"
+        for event in supported_events
+    )
     summary = (
         f"{identity.gregorian_date.isoformat()} = {identity.weton_jawa}, "
         f"wuku {identity.wuku}, neptu {identity.neptu_total}"
@@ -344,34 +350,50 @@ def javanese_day_profile(value: date | datetime | str) -> JavaneseDayProfile:
             f", taun {identity.year_cycle.year_name} {identity.year_cycle.year_number}, "
             f"windu {identity.year_cycle.windu_name}, kurup {identity.year_cycle.kurup_code}."
         )
+        year_cycle_description = (
+            f"Tanggal {identity.gregorian_date.isoformat()} masuk taun {identity.year_cycle.year_name} "
+            f"{identity.year_cycle.year_number}, windu {identity.year_cycle.windu_name}, "
+            f"kurup {identity.year_cycle.kurup_code}."
+        )
     else:
         summary += "."
+        year_cycle_description = (
+            f"Tanggal {identity.gregorian_date.isoformat()} belum terpetakan ke taun, windu, dan kurup exact di sistem ini."
+        )
 
     common_uses = (
         JavaneseCulturalUse(
             category="watak_pribadi",
-            description="Weton menjadi dasar menafsirkan watak dan kecenderungan seseorang.",
+            description=f"Untuk {identity.weton_jawa}, watak yang sering dikaitkan adalah: {watak_profile}",
             example_question=f"Apa watak orang dengan weton {identity.weton_jawa}?",
         ),
         JavaneseCulturalUse(
             category="ritual_wetonan",
-            description="Identitas hari digunakan untuk menghitung wetonan, selapanan, atau bancakan.",
+            description=(
+                f"Wetonan berikutnya untuk {identity.weton_jawa} jatuh pada {next_weton_date.isoformat()}, "
+                f"dan hari ini berada di selapan ke-{selapan_day}."
+            ),
             example_question=f"Kapan wetonan berikutnya untuk {identity.weton_jawa}?",
         ),
         JavaneseCulturalUse(
             category="siklus_tahun_jawa",
-            description="Nama taun, windu, dan kurup membantu membaca posisi tahun Jawa dalam siklus Sultan Agungan.",
+            description=year_cycle_description,
             example_question=f"Tahun Jawa untuk {identity.gregorian_date.isoformat()} masuk taun apa dan windu apa?",
         ),
         JavaneseCulturalUse(
             category="kecocokan_jodoh",
-            description="Weton dipasangkan untuk menghitung jenjem dan kecocokan pasangan.",
+            description=(
+                f"Weton dasar {identity.weton_jawa} membawa neptu {identity.neptu_total}; "
+                "sistem akan menambahkan neptu pasangan untuk membaca jenjem dan kecocokan."
+            ),
             example_question=f"Bagaimana kecocokan jodoh {identity.weton_jawa} dengan weton pasangan?",
             requires_additional_input=True,
         ),
         JavaneseCulturalUse(
             category="hari_baik_keputusan",
-            description="Petung Jawa dipakai memilih hari baik nikah, rumah, usaha, atau tanam.",
+            description=(
+                f"Dengan neptu {identity.neptu_total}, ringkasan hari ini adalah: {event_snapshot}."
+            ),
             example_question=(
                 f"Hari baik apa untuk nikah, pindah rumah, usaha, atau tanam jika acuannya {identity.weton_jawa}?"
             ),
@@ -379,7 +401,10 @@ def javanese_day_profile(value: date | datetime | str) -> JavaneseDayProfile:
         ),
         JavaneseCulturalUse(
             category="identitas_sosial",
-            description="Pasaran menempel pada identitas sosial dan penamaan keluarga.",
+            description=(
+                f"Pada hari {identity.weton_jawa}, pasaran {identity.pasaran} menjadi penanda yang dalam sebagian tradisi "
+                "dipakai untuk mengingat hari lahir, wetonan keluarga, atau bancakan."
+            ),
             example_question=(
                 f"Apakah pasaran {identity.pasaran} pada {identity.weton_jawa} berkaitan dengan nama keluarga?"
             ),
@@ -553,6 +578,7 @@ def _javanese_year_length_pre_asapon(year_number: int) -> int:
 
     year_name = _year_name(year_number)
     return 355 if year_name in leap_years else 354
+
 
 
 

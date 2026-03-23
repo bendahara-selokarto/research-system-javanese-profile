@@ -84,6 +84,7 @@ def test_known_reference_dates_match_published_examples(
 
 def test_day_profile_bundle_and_selapan() -> None:
     profile = javanese_day_profile("1990-04-25")
+    uses = {use.category: use for use in profile.common_uses}
 
     assert profile.summary.startswith("1990-04-25 = Rebo Pon, wuku Julungpujut, neptu 14")
     assert "kurup Asapon" in profile.summary
@@ -93,8 +94,12 @@ def test_day_profile_bundle_and_selapan() -> None:
     assert profile.next_three_weton_dates == (date(1990, 5, 30), date(1990, 7, 4), date(1990, 8, 8))
     assert profile.identity.weton_jawa == "Rebo Pon"
     assert profile.identity.year_cycle is not None
-    assert any("watak" in use.description for use in profile.common_uses)
-    assert any(use.category == "siklus_tahun_jawa" for use in profile.common_uses)
+    assert "Rebo Pon" in uses["watak_pribadi"].description
+    assert "1990-05-30" in uses["ritual_wetonan"].description
+    assert str(profile.identity.year_cycle.year_number) in uses["siklus_tahun_jawa"].description
+    assert "neptu 14" in uses["kecocokan_jodoh"].description
+    assert "nikah" in uses["hari_baik_keputusan"].description
+    assert "Pon" in uses["identitas_sosial"].description
 
 
 
@@ -131,4 +136,5 @@ def test_accepts_iso_and_datetime_inputs() -> None:
     iso_profile = javanese_day_profile("2021-08-10")
     datetime_profile = javanese_day_profile(datetime(2021, 8, 10, 22, 45, 0))
     assert iso_profile.identity.weton == datetime_profile.identity.weton
+
 
