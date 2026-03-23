@@ -72,6 +72,9 @@ Output default akan dibuat di:
 output/YYYY-MM-DD.docx
 ```
 
+Jika file sudah ada, nama file akan diberi suffix otomatis seperti `-2`, `-3`, dan seterusnya.
+Untuk mode pasangan, nama file akan menjadi `output/YYYY-MM-DD-partner-YYYY-MM-DD.docx`.
+
 ## API Python
 
 ```python

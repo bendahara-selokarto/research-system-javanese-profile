@@ -24,6 +24,26 @@ def _parse_date(raw: str) -> date:
     return date.fromisoformat(raw)
 
 
+def _artifact_stem(target: date, partner: date | None = None) -> str:
+    stem = f"{target:%Y-%m-%d}"
+    if partner is not None:
+        stem = f"{stem}-partner-{partner:%Y-%m-%d}"
+    return stem
+
+
+def _next_artifact_path(output_dir: Path, stem: str) -> Path:
+    candidate = output_dir / f"{stem}.docx"
+    if not candidate.exists():
+        return candidate
+
+    suffix = 2
+    while True:
+        candidate = output_dir / f"{stem}-{suffix}.docx"
+        if not candidate.exists():
+            return candidate
+        suffix += 1
+
+
 def write_profile_docx(
     target_date: date | str,
     partner_date: date | str | None = None,
@@ -35,7 +55,7 @@ def write_profile_docx(
     profile = javanese_day_profile(target)
     output_base = (output_dir or Path("output")).expanduser()
     output_base.mkdir(parents=True, exist_ok=True)
-    artifact = output_base / f"{target:%Y-%m-%d}.docx"
+    artifact = _next_artifact_path(output_base, _artifact_stem(target, partner))
 
     document = Document()
     document.add_heading(f"Profil Hari Jawa - {target:%Y-%m-%d}", level=1)
