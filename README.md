@@ -1,6 +1,10 @@
 # Research System Javanese Profile
 
-Repo ini khusus untuk fitur `research_system.commands.javanese_profile` tanpa membawa seluruh pipeline `ai-research-system`.
+[![Tests](https://github.com/bendahara-selokarto/research-system-javanese-profile/actions/workflows/tests.yml/badge.svg)](https://github.com/bendahara-selokarto/research-system-javanese-profile/actions/workflows/tests.yml)
+[![Release](https://img.shields.io/github/v/release/bendahara-selokarto/research-system-javanese-profile)](https://github.com/bendahara-selokarto/research-system-javanese-profile/releases/tag/v0.1.0)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/bendahara-selokarto/research-system-javanese-profile/blob/main/LICENSE)
+
+Repo ini adalah repo mandiri untuk fitur `research_system.commands.javanese_profile` tanpa membawa seluruh pipeline `ai-research-system`.
 
 Isi repo:
 
@@ -15,6 +19,9 @@ Isi repo:
 
 ```text
 .
+|-- .github/
+|   `-- workflows/
+|       `-- tests.yml
 |-- src/
 |   `-- research_system/
 |       |-- commands/
@@ -22,6 +29,7 @@ Isi repo:
 |       `-- utils/
 |           `-- javanese_calendar.py
 |-- tests/
+|-- LICENSE
 |-- pyproject.toml
 `-- README.md
 ```
@@ -68,7 +76,7 @@ output/YYYY-MM-DD.docx
 
 ```python
 from research_system.commands.javanese_profile import write_profile_docx
-from research_system.utils import javanese_day_profile, compatibility_result
+from research_system.utils import compatibility_result, javanese_day_profile
 
 profile = javanese_day_profile("1990-04-25")
 compat = compatibility_result("2025-01-14", "2025-01-05")
@@ -85,3 +93,5 @@ Catatan:
 ```bash
 python -m pytest
 ```
+
+Workflow CI akan menjalankan test otomatis pada Python 3.11 dan 3.12 setiap push ke `main` dan setiap pull request.
