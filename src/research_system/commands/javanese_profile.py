@@ -76,6 +76,35 @@ def write_profile_docx(
         row[0].text = label
         row[1].text = value
 
+    document.add_heading("Siklus tahun Jawa", level=2)
+    if profile.identity.year_cycle is not None:
+        year_cycle = profile.identity.year_cycle
+        year_table = document.add_table(rows=0, cols=2)
+        for label, value in (
+            ("Tahun Jawa", str(year_cycle.year_number)),
+            ("Nomor lanjutan Saka", str(year_cycle.saka_continuity_year)),
+            ("Nama taun", year_cycle.year_name),
+            ("Windu", year_cycle.windu_name),
+            ("Tahun ke dalam windu", str(year_cycle.windu_year_number)),
+            ("Jenis taun", f"{year_cycle.year_type} ({year_cycle.year_length_days} hari)"),
+            (
+                "Kurup",
+                f"{year_cycle.kurup_code} ({year_cycle.kurup_name}, {year_cycle.kurup_start_year}-{year_cycle.kurup_end_year} AJ)",
+            ),
+        ):
+            row = year_table.add_row().cells
+            row[0].text = label
+            row[1].text = value
+
+        document.add_paragraph(
+            "Nomor tahun Jawa Sultan Agungan meneruskan angka tahun Saka, "
+            "tetapi perhitungan tahunnya mengikuti pola lunar yang diselaraskan dengan Hijriah."
+        )
+    else:
+        document.add_paragraph(
+            "Hitungan exact nama taun, windu, dan kurup belum ditampilkan untuk tanggal ini karena berada di luar rentang kurup baku yang diimplementasikan sistem."
+        )
+
     document.add_heading("Selapan dan wetonan berikutnya", level=2)
     document.add_paragraph(
         f"Selapan ke-{profile.selapan_day} dari {SELAPAN_CYCLE_DAYS}-hari; "

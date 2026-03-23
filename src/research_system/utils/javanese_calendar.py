@@ -63,9 +63,68 @@ WUKU_NAMES = (
     "Dukut",
     "Watugunung",
 )
+JAVANESE_YEAR_NAMES = (
+    "Alip",
+    "Ehe",
+    "Jimawal",
+    "Je",
+    "Dal",
+    "Be",
+    "Wawu",
+    "Jimakir",
+)
+WINDU_NAMES = (
+    "Kuntara",
+    "Sangara",
+    "Sancaya",
+    "Adi",
+)
 SELAPAN_CYCLE_DAYS = 35
 
 _EPOCH_PAWUKON_INDEX = WUKU_NAMES.index("Kulawu") * 7 + 5
+_EPOCH_JAVANESE_YEAR = 1555
+_ASAPON_ANCHOR_DATE = date(1936, 3, 25)
+_ASAPON_ANCHOR_JAVANESE_YEAR = 1867
+_ASAPON_ANCHOR_HIJRI_YEAR = 1355
+_HIJRI_LEAP_YEAR_POSITIONS = frozenset({2, 5, 7, 10, 13, 16, 18, 21, 24, 26, 29})
+
+KURUPS = (
+    {
+        "code": "Aahgi",
+        "name": "Alip Jumat Legi",
+        "start_year": 1555,
+        "end_year_exclusive": 1627,
+        "leap_years": frozenset({"Ehe", "Dal", "Jimakir"}),
+    },
+    {
+        "code": "Amiswon",
+        "name": "Alip Kamis Kliwon",
+        "start_year": 1627,
+        "end_year_exclusive": 1747,
+        "leap_years": frozenset({"Ehe", "Dal", "Jimakir"}),
+    },
+    {
+        "code": "Aboge",
+        "name": "Alip Rebo Wage",
+        "start_year": 1747,
+        "end_year_exclusive": 1867,
+        "leap_years": frozenset({"Ehe", "Je", "Jimakir"}),
+    },
+    {
+        "code": "Asapon",
+        "name": "Alip Selasa Pon",
+        "start_year": 1867,
+        "end_year_exclusive": 1987,
+        "leap_years": frozenset({"Ehe", "Je", "Jimakir"}),
+    },
+    {
+        "code": "Anenhing",
+        "name": "Alip Senin Pahing",
+        "start_year": 1987,
+        "end_year_exclusive": 2107,
+        "leap_years": None,
+    },
+)
 
 WETON_WATAK = {
     "Senen Legi": "Pendamai, suka menjaga keharmonisan keluarga.",
@@ -136,6 +195,23 @@ EVENT_GUIDELINES = {
 
 
 @dataclass(frozen=True, slots=True)
+class JavaneseYearCycle:
+    year_number: int
+    saka_continuity_year: int
+    year_name: str
+    year_type: str
+    year_length_days: int
+    year_start_date: date
+    next_year_start_date: date
+    windu_name: str
+    windu_year_number: int
+    kurup_code: str
+    kurup_name: str
+    kurup_start_year: int
+    kurup_end_year: int
+
+
+@dataclass(frozen=True, slots=True)
 class JavaneseCalendarCycles:
     gregorian_date: date
     hari: str
@@ -149,6 +225,7 @@ class JavaneseCalendarCycles:
     wuku: str
     days_since_epoch: int
     pawukon_day: int
+    year_cycle: JavaneseYearCycle | None
 
     @property
     def jenjem(self) -> int:
@@ -220,7 +297,28 @@ def javanese_calendar_cycles(value: date | datetime | str) -> JavaneseCalendarCy
         wuku=wuku,
         days_since_epoch=days_since_epoch,
         pawukon_day=pawukon_index + 1,
+        year_cycle=javanese_year_cycle(target_date),
     )
+
+
+def javanese_year_cycle(value: date | datetime | str) -> JavaneseYearCycle | None:
+    target_date = _coerce_date(value)
+    if target_date < JAVANESE_CALENDAR_EPOCH:
+        return None
+
+    if target_date >= _ASAPON_ANCHOR_DATE:
+        return _year_cycle_from_asapon_anchor(target_date)
+
+    year_number = _EPOCH_JAVANESE_YEAR
+    year_start_date = JAVANESE_CALENDAR_EPOCH
+    while True:
+        year_length_days = _javanese_year_length_pre_asapon(year_number)
+        next_year_start_date = year_start_date + timedelta(days=year_length_days)
+        if target_date < next_year_start_date:
+            return _build_year_cycle(year_number, year_start_date, next_year_start_date, year_length_days)
+
+        year_number += 1
+        year_start_date = next_year_start_date
 
 
 def get_watak_profile(value: date | datetime | str) -> str:
@@ -239,8 +337,15 @@ def javanese_day_profile(value: date | datetime | str) -> JavaneseDayProfile:
     selapan_day = identity.days_since_epoch % SELAPAN_CYCLE_DAYS + 1
     summary = (
         f"{identity.gregorian_date.isoformat()} = {identity.weton_jawa}, "
-        f"wuku {identity.wuku}, neptu {identity.neptu_total}."
+        f"wuku {identity.wuku}, neptu {identity.neptu_total}"
     )
+    if identity.year_cycle is not None:
+        summary += (
+            f", taun {identity.year_cycle.year_name} {identity.year_cycle.year_number}, "
+            f"windu {identity.year_cycle.windu_name}, kurup {identity.year_cycle.kurup_code}."
+        )
+    else:
+        summary += "."
 
     common_uses = (
         JavaneseCulturalUse(
@@ -252,6 +357,11 @@ def javanese_day_profile(value: date | datetime | str) -> JavaneseDayProfile:
             category="ritual_wetonan",
             description="Identitas hari digunakan untuk menghitung wetonan, selapanan, atau bancakan.",
             example_question=f"Kapan wetonan berikutnya untuk {identity.weton_jawa}?",
+        ),
+        JavaneseCulturalUse(
+            category="siklus_tahun_jawa",
+            description="Nama taun, windu, dan kurup membantu membaca posisi tahun Jawa dalam siklus Sultan Agungan.",
+            example_question=f"Tahun Jawa untuk {identity.gregorian_date.isoformat()} masuk taun apa dan windu apa?",
         ),
         JavaneseCulturalUse(
             category="kecocokan_jodoh",
@@ -355,3 +465,94 @@ def _coerce_date(value: date | datetime | str) -> date:
     if isinstance(value, str):
         return date.fromisoformat(value)
     raise TypeError("value must be a datetime.date, datetime.datetime, or ISO date string")
+
+
+def _year_name(year_number: int) -> str:
+    return JAVANESE_YEAR_NAMES[(year_number - _EPOCH_JAVANESE_YEAR) % len(JAVANESE_YEAR_NAMES)]
+
+
+def _kurup_for_year(year_number: int) -> dict[str, object] | None:
+    for kurup in KURUPS:
+        if kurup["start_year"] <= year_number < kurup["end_year_exclusive"]:
+            return kurup
+    return None
+
+
+def _build_year_cycle(
+    year_number: int,
+    year_start_date: date,
+    next_year_start_date: date,
+    year_length_days: int,
+) -> JavaneseYearCycle:
+    kurup = _kurup_for_year(year_number)
+    if kurup is None:
+        kurup = {
+            "code": "Tidak diketahui",
+            "name": "Di luar rentang kurup baku sistem",
+            "start_year": year_number,
+            "end_year_exclusive": year_number + 1,
+        }
+
+    windu_year_number = (year_number - _EPOCH_JAVANESE_YEAR) % len(JAVANESE_YEAR_NAMES) + 1
+    windu_name = WINDU_NAMES[((year_number - _EPOCH_JAVANESE_YEAR) // len(JAVANESE_YEAR_NAMES)) % len(WINDU_NAMES)]
+    return JavaneseYearCycle(
+        year_number=year_number,
+        saka_continuity_year=year_number,
+        year_name=_year_name(year_number),
+        year_type="Taun Wuntu" if year_length_days == 355 else "Taun Wastu",
+        year_length_days=year_length_days,
+        year_start_date=year_start_date,
+        next_year_start_date=next_year_start_date,
+        windu_name=windu_name,
+        windu_year_number=windu_year_number,
+        kurup_code=kurup["code"],
+        kurup_name=kurup["name"],
+        kurup_start_year=kurup["start_year"],
+        kurup_end_year=kurup["end_year_exclusive"] - 1,
+    )
+
+
+def _year_cycle_from_asapon_anchor(target_date: date) -> JavaneseYearCycle:
+    year_number = _ASAPON_ANCHOR_JAVANESE_YEAR
+    hijri_year = _ASAPON_ANCHOR_HIJRI_YEAR
+    year_start_date = _ASAPON_ANCHOR_DATE
+
+    while True:
+        year_length_days = _asapon_anchor_year_length(hijri_year, year_number)
+        next_year_start_date = year_start_date + timedelta(days=year_length_days)
+        if target_date < next_year_start_date:
+            return _build_year_cycle(year_number, year_start_date, next_year_start_date, year_length_days)
+
+        year_number += 1
+        hijri_year += 1
+        year_start_date = next_year_start_date
+
+
+def _is_hijri_leap_year(hijri_year: int) -> bool:
+    cycle_position = (hijri_year - 1) % 30 + 1
+    return cycle_position in _HIJRI_LEAP_YEAR_POSITIONS
+
+
+def _asapon_anchor_year_length(hijri_year: int, year_number: int) -> int:
+    if hijri_year == _ASAPON_ANCHOR_HIJRI_YEAR or year_number == _ASAPON_ANCHOR_JAVANESE_YEAR:
+        return 354
+    return 355 if _is_hijri_leap_year(hijri_year) else 354
+
+
+def _javanese_year_length_pre_asapon(year_number: int) -> int:
+    kurup = _kurup_for_year(year_number)
+    if kurup is None:
+        raise ValueError(f"Tahun Jawa {year_number} berada di luar rentang kurup yang dikenal sistem ini.")
+
+    leap_years = kurup["leap_years"]
+    if leap_years is None:
+        raise ValueError(f"Tahun Jawa {year_number} membutuhkan jangkar modern, bukan tabel pra-Asapon.")
+
+    if year_number in (1746, 1866):
+        return 354
+
+    year_name = _year_name(year_number)
+    return 355 if year_name in leap_years else 354
+
+
+

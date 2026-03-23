@@ -11,6 +11,7 @@ from research_system.utils import (
     hari_baik_advice,
     javanese_calendar_cycles,
     javanese_day_profile,
+    javanese_year_cycle,
     marriage_jenjem,
 )
 
@@ -23,6 +24,34 @@ def test_epoch_matches_sultan_agungan_anchor() -> None:
     assert result.weton == "Jumat Legi"
     assert result.wuku == "Kulawu"
     assert result.neptu_total == 11
+    assert result.year_cycle is not None
+    assert result.year_cycle.year_number == 1555
+    assert result.year_cycle.year_name == "Alip"
+    assert result.year_cycle.windu_name == "Kuntara"
+    assert result.year_cycle.kurup_code == "Aahgi"
+
+
+
+def test_kurup_asapon_anchor_matches_falak_reference() -> None:
+    result = javanese_year_cycle("1936-03-25")
+
+    assert result is not None
+    assert result.year_number == 1867
+    assert result.year_name == "Alip"
+    assert result.kurup_code == "Asapon"
+    assert result.year_start_date == date(1936, 3, 25)
+
+
+
+def test_kraton_reference_for_1_sura_jimawal_1957() -> None:
+    result = javanese_year_cycle("2023-07-19")
+
+    assert result is not None
+    assert result.year_number == 1957
+    assert result.year_name == "Jimawal"
+    assert result.kurup_code == "Asapon"
+    assert result.year_start_date == date(2023, 7, 19)
+
 
 
 def test_watak_profile_returns_known_description() -> None:
@@ -52,16 +81,28 @@ def test_known_reference_dates_match_published_examples(
     assert result.wuku == wuku
 
 
+
 def test_day_profile_bundle_and_selapan() -> None:
     profile = javanese_day_profile("1990-04-25")
 
-    assert profile.summary == "1990-04-25 = Rebo Pon, wuku Julungpujut, neptu 14."
+    assert profile.summary.startswith("1990-04-25 = Rebo Pon, wuku Julungpujut, neptu 14")
+    assert "kurup Asapon" in profile.summary
     assert profile.selapan_cycle_days == 35
     assert profile.selapan_day == 13
     assert profile.next_weton_date == date(1990, 5, 30)
     assert profile.next_three_weton_dates == (date(1990, 5, 30), date(1990, 7, 4), date(1990, 8, 8))
     assert profile.identity.weton_jawa == "Rebo Pon"
+    assert profile.identity.year_cycle is not None
     assert any("watak" in use.description for use in profile.common_uses)
+    assert any(use.category == "siklus_tahun_jawa" for use in profile.common_uses)
+
+
+
+def test_future_dates_keep_year_cycle_information() -> None:
+    result = javanese_year_cycle("2053-01-01")
+    assert result is not None
+    assert result.kurup_code in {"Asapon", "Anenhing"}
+
 
 
 def test_marriage_jenjem_and_compatibility() -> None:
@@ -71,6 +112,7 @@ def test_marriage_jenjem_and_compatibility() -> None:
     assert "diskusi" in compatibility.recommendation.lower()
 
 
+
 def test_hari_baik_advice_starts_when_supported_event() -> None:
     advice = hari_baik_advice("2021-08-10", "nikah")
     assert advice.event == "nikah"
@@ -78,12 +120,15 @@ def test_hari_baik_advice_starts_when_supported_event() -> None:
     assert advice.is_good is False
 
 
+
 def test_hari_baik_advice_raises_unknown_event() -> None:
     with pytest.raises(ValueError):
         hari_baik_advice("2021-08-10", "tidak-ada")
+
 
 
 def test_accepts_iso_and_datetime_inputs() -> None:
     iso_profile = javanese_day_profile("2021-08-10")
     datetime_profile = javanese_day_profile(datetime(2021, 8, 10, 22, 45, 0))
     assert iso_profile.identity.weton == datetime_profile.identity.weton
+

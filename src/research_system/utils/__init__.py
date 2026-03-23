@@ -6,12 +6,14 @@ from research_system.utils.javanese_calendar import (
     JavaneseCulturalUse,
     JavaneseDayProfile,
     JavaneseHariBaikAdvice,
+    JavaneseYearCycle,
     SELAPAN_CYCLE_DAYS,
     compatibility_result,
     get_watak_profile,
     hari_baik_advice,
     javanese_calendar_cycles,
     javanese_day_profile,
+    javanese_year_cycle,
     marriage_jenjem,
 )
 
@@ -23,11 +25,13 @@ __all__ = [
     "JavaneseCulturalUse",
     "JavaneseDayProfile",
     "JavaneseHariBaikAdvice",
+    "JavaneseYearCycle",
     "SELAPAN_CYCLE_DAYS",
     "compatibility_result",
     "get_watak_profile",
     "hari_baik_advice",
     "javanese_calendar_cycles",
     "javanese_day_profile",
+    "javanese_year_cycle",
     "marriage_jenjem",
 ]
