@@ -11,9 +11,11 @@ from research_system.utils import (
     hari_baik_advice,
     javanese_calendar_cycles,
     javanese_day_profile,
+    javanese_naga_dina,
     javanese_year_cycle,
     marriage_jenjem,
 )
+
 
 
 def test_epoch_matches_sultan_agungan_anchor() -> None:
@@ -29,6 +31,10 @@ def test_epoch_matches_sultan_agungan_anchor() -> None:
     assert result.year_cycle.year_name == "Alip"
     assert result.year_cycle.windu_name == "Kuntara"
     assert result.year_cycle.kurup_code == "Aahgi"
+    assert result.javanese_date is not None
+    assert result.javanese_date.formatted == "1 Sura 1555 AJ"
+    assert result.hijri_date is not None
+    assert result.hijri_date.formatted == "1 Muharram 1043 H"
 
 
 
@@ -51,6 +57,16 @@ def test_kraton_reference_for_1_sura_jimawal_1957() -> None:
     assert result.year_name == "Jimawal"
     assert result.kurup_code == "Asapon"
     assert result.year_start_date == date(2023, 7, 19)
+
+
+
+def test_lunar_dates_follow_javanese_and_hijri_year_start() -> None:
+    result = javanese_calendar_cycles("2023-07-19")
+
+    assert result.javanese_date is not None
+    assert result.javanese_date.formatted == "1 Sura 1957 AJ"
+    assert result.hijri_date is not None
+    assert result.hijri_date.formatted == "1 Muharram 1445 H"
 
 
 
@@ -82,11 +98,34 @@ def test_known_reference_dates_match_published_examples(
 
 
 
+def test_naga_dina_supports_default_and_comparison_variants() -> None:
+    naga = javanese_naga_dina("1990-04-25")
+
+    assert naga.default_variant_code == "pepali_arah"
+    assert naga.default_variant_label == "Pepali arah hari-pasaran"
+    assert naga.day_directions == ("Barat Laut",)
+    assert naga.pasaran_direction == "Barat"
+    assert naga.neptu_cycle_total == 14
+    assert naga.neptu_cycle_direction == "Selatan"
+    assert {variant.code for variant in naga.variants} == {"pepali_arah", "boyongan_neptu"}
+
+
+
+def test_naga_dina_keeps_dual_direction_for_kemis() -> None:
+    naga = javanese_naga_dina("2020-10-01")
+
+    assert naga.day_directions == ("Utara", "Timur Laut")
+    assert naga.pasaran_direction == "Tengah"
+
+
+
 def test_day_profile_bundle_and_selapan() -> None:
     profile = javanese_day_profile("1990-04-25")
     uses = {use.category: use for use in profile.common_uses}
 
     assert profile.summary.startswith("1990-04-25 = Rebo Pon, wuku Julungpujut, neptu 14")
+    assert "Hijriyah 29 Ramadan 1410 H" in profile.summary
+    assert "tanggal Jawa 29 Pasa 1922 AJ" in profile.summary
     assert "kurup Asapon" in profile.summary
     assert profile.selapan_cycle_days == 35
     assert profile.selapan_day == 13
@@ -94,11 +133,19 @@ def test_day_profile_bundle_and_selapan() -> None:
     assert profile.next_three_weton_dates == (date(1990, 5, 30), date(1990, 7, 4), date(1990, 8, 8))
     assert profile.identity.weton_jawa == "Rebo Pon"
     assert profile.identity.year_cycle is not None
+    assert profile.identity.javanese_date is not None
+    assert profile.identity.javanese_date.month_name == "Pasa"
+    assert profile.identity.hijri_date is not None
+    assert profile.identity.hijri_date.month_name == "Ramadan"
+    assert profile.identity.naga_dina.default_variant_code == "pepali_arah"
+    assert profile.identity.naga_dina.neptu_cycle_direction == "Selatan"
     assert "Rebo Pon" in uses["watak_pribadi"].description
     assert "1990-05-30" in uses["ritual_wetonan"].description
     assert str(profile.identity.year_cycle.year_number) in uses["siklus_tahun_jawa"].description
     assert "neptu 14" in uses["kecocokan_jodoh"].description
     assert "nikah" in uses["hari_baik_keputusan"].description
+    assert "Barat Laut" in uses["naga_dina"].description
+    assert "Selatan" in uses["naga_dina"].description
     assert "Pon" in uses["identitas_sosial"].description
 
 
@@ -136,5 +183,5 @@ def test_accepts_iso_and_datetime_inputs() -> None:
     iso_profile = javanese_day_profile("2021-08-10")
     datetime_profile = javanese_day_profile(datetime(2021, 8, 10, 22, 45, 0))
     assert iso_profile.identity.weton == datetime_profile.identity.weton
-
-
+    assert iso_profile.identity.javanese_date == datetime_profile.identity.javanese_date
+    assert iso_profile.identity.hijri_date == datetime_profile.identity.hijri_date

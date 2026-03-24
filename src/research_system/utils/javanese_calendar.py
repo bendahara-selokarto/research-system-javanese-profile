@@ -79,10 +79,40 @@ WINDU_NAMES = (
     "Sancaya",
     "Adi",
 )
+JAVANESE_MONTH_NAMES = (
+    "Sura",
+    "Sapar",
+    "Mulud",
+    "Bakda Mulud",
+    "Jumadilawal",
+    "Jumadilakir",
+    "Rejeb",
+    "Ruwah",
+    "Pasa",
+    "Sawal",
+    "Dulkangidah",
+    "Besar",
+)
+HIJRI_MONTH_NAMES = (
+    "Muharram",
+    "Safar",
+    "Rabiulawal",
+    "Rabiulakhir",
+    "Jumadilawal",
+    "Jumadilakhir",
+    "Rajab",
+    "Syakban",
+    "Ramadan",
+    "Syawal",
+    "Zulkaidah",
+    "Zulhijah",
+)
 SELAPAN_CYCLE_DAYS = 35
 
 _EPOCH_PAWUKON_INDEX = WUKU_NAMES.index("Kulawu") * 7 + 5
 _EPOCH_JAVANESE_YEAR = 1555
+_EPOCH_HIJRI_YEAR = 1043
+_JAVANESE_TO_HIJRI_YEAR_OFFSET = _EPOCH_JAVANESE_YEAR - _EPOCH_HIJRI_YEAR
 _ASAPON_ANCHOR_DATE = date(1936, 3, 25)
 _ASAPON_ANCHOR_JAVANESE_YEAR = 1867
 _ASAPON_ANCHOR_HIJRI_YEAR = 1355
@@ -125,6 +155,24 @@ KURUPS = (
         "leap_years": None,
     },
 )
+
+NAGA_DINA_DAY_DIRECTIONS = {
+    "Senen": ("Barat Daya",),
+    "Selasa": ("Barat",),
+    "Rebo": ("Barat Laut",),
+    "Kemis": ("Utara", "Timur Laut"),
+    "Jemuwah": ("Timur",),
+    "Setu": ("Tenggara",),
+    "Ngahad": ("Selatan",),
+}
+NAGA_DINA_PASARAN_DIRECTIONS = {
+    "Legi": "Timur",
+    "Pahing": "Selatan",
+    "Pon": "Barat",
+    "Wage": "Utara",
+    "Kliwon": "Tengah",
+}
+NAGA_DINA_NEPTU_ROTATION = ("Timur", "Selatan", "Barat", "Utara")
 
 WETON_WATAK = {
     "Senen Legi": "Pendamai, suka menjaga keharmonisan keluarga.",
@@ -212,6 +260,54 @@ class JavaneseYearCycle:
 
 
 @dataclass(frozen=True, slots=True)
+class JavaneseLunarDate:
+    day: int
+    month_number: int
+    month_name: str
+    year_number: int
+    year_name: str
+
+    @property
+    def formatted(self) -> str:
+        return f"{self.day} {self.month_name} {self.year_number} AJ"
+
+
+@dataclass(frozen=True, slots=True)
+class HijriDate:
+    day: int
+    month_number: int
+    month_name: str
+    year_number: int
+
+    @property
+    def formatted(self) -> str:
+        return f"{self.day} {self.month_name} {self.year_number} H"
+
+
+@dataclass(frozen=True, slots=True)
+class JavaneseNagaDinaVariant:
+    code: str
+    label: str
+    source_label: str
+    basis: str
+    directions: tuple[str, ...]
+    note: str
+
+
+@dataclass(frozen=True, slots=True)
+class JavaneseNagaDina:
+    weton_jawa: str
+    default_variant_code: str
+    default_variant_label: str
+    day_directions: tuple[str, ...]
+    pasaran_direction: str
+    neptu_cycle_total: int
+    neptu_cycle_direction: str
+    summary: str
+    variants: tuple[JavaneseNagaDinaVariant, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class JavaneseCalendarCycles:
     gregorian_date: date
     hari: str
@@ -226,6 +322,9 @@ class JavaneseCalendarCycles:
     days_since_epoch: int
     pawukon_day: int
     year_cycle: JavaneseYearCycle | None
+    javanese_date: JavaneseLunarDate | None
+    hijri_date: HijriDate | None
+    naga_dina: JavaneseNagaDina
 
     @property
     def jenjem(self) -> int:
@@ -283,6 +382,14 @@ def javanese_calendar_cycles(value: date | datetime | str) -> JavaneseCalendarCy
     neptu_total = hari_neptu + pasaran_neptu
     pawukon_index = (days_since_epoch + _EPOCH_PAWUKON_INDEX) % 210
     wuku = WUKU_NAMES[pawukon_index // 7]
+    weton_jawa = f"{dinapitu} {pasaran}"
+    year_cycle = javanese_year_cycle(target_date)
+    if year_cycle is not None:
+        javanese_date, hijri_date = _build_lunar_dates(target_date, year_cycle)
+    else:
+        javanese_date = None
+        hijri_date = None
+    naga_dina = _build_naga_dina(weton_jawa, dinapitu, pasaran, neptu_total)
 
     return JavaneseCalendarCycles(
         gregorian_date=target_date,
@@ -293,11 +400,14 @@ def javanese_calendar_cycles(value: date | datetime | str) -> JavaneseCalendarCy
         pasaran_neptu=pasaran_neptu,
         neptu_total=neptu_total,
         weton=f"{hari} {pasaran}",
-        weton_jawa=f"{dinapitu} {pasaran}",
+        weton_jawa=weton_jawa,
         wuku=wuku,
         days_since_epoch=days_since_epoch,
         pawukon_day=pawukon_index + 1,
-        year_cycle=javanese_year_cycle(target_date),
+        year_cycle=year_cycle,
+        javanese_date=javanese_date,
+        hijri_date=hijri_date,
+        naga_dina=naga_dina,
     )
 
 
@@ -321,6 +431,10 @@ def javanese_year_cycle(value: date | datetime | str) -> JavaneseYearCycle | Non
         year_start_date = next_year_start_date
 
 
+def javanese_naga_dina(value: date | datetime | str) -> JavaneseNagaDina:
+    return javanese_calendar_cycles(value).naga_dina
+
+
 def get_watak_profile(value: date | datetime | str) -> str:
     identity = javanese_calendar_cycles(value)
     return WETON_WATAK.get(identity.weton_jawa, "Kombinasi watak yang fleksibel dan adaptif.")
@@ -336,6 +450,7 @@ def javanese_day_profile(value: date | datetime | str) -> JavaneseDayProfile:
     )
     selapan_day = identity.days_since_epoch % SELAPAN_CYCLE_DAYS + 1
     watak_profile = get_watak_profile(identity.gregorian_date)
+    naga_dina = identity.naga_dina
     supported_events = ("nikah", "rumah", "usaha", "tanam")
     event_snapshot = ", ".join(
         f"{event} {'baik' if hari_baik_advice(identity.gregorian_date, event).is_good else 'tidak'}"
@@ -345,6 +460,11 @@ def javanese_day_profile(value: date | datetime | str) -> JavaneseDayProfile:
         f"{identity.gregorian_date.isoformat()} = {identity.weton_jawa}, "
         f"wuku {identity.wuku}, neptu {identity.neptu_total}"
     )
+    if identity.javanese_date is not None and identity.hijri_date is not None:
+        summary += (
+            f", tanggal Jawa {identity.javanese_date.formatted}, "
+            f"Hijriyah {identity.hijri_date.formatted}"
+        )
     if identity.year_cycle is not None:
         summary += (
             f", taun {identity.year_cycle.year_name} {identity.year_cycle.year_number}, "
@@ -360,6 +480,12 @@ def javanese_day_profile(value: date | datetime | str) -> JavaneseDayProfile:
         year_cycle_description = (
             f"Tanggal {identity.gregorian_date.isoformat()} belum terpetakan ke taun, windu, dan kurup exact di sistem ini."
         )
+
+    naga_dina_description = (
+        f"Untuk {identity.weton_jawa}, varian default sistem menempatkan {identity.dinapitu} di "
+        f"{_format_directions(naga_dina.day_directions)}; {identity.pasaran} di {naga_dina.pasaran_direction}; "
+        f"varian boyongan-neptu dengan jumlah {naga_dina.neptu_cycle_total} mengarah ke {naga_dina.neptu_cycle_direction}."
+    )
 
     common_uses = (
         JavaneseCulturalUse(
@@ -398,6 +524,11 @@ def javanese_day_profile(value: date | datetime | str) -> JavaneseDayProfile:
                 f"Hari baik apa untuk nikah, pindah rumah, usaha, atau tanam jika acuannya {identity.weton_jawa}?"
             ),
             requires_additional_input=True,
+        ),
+        JavaneseCulturalUse(
+            category="naga_dina",
+            description=naga_dina_description,
+            example_question=f"Ke arah mana naga dina untuk {identity.weton_jawa}?",
         ),
         JavaneseCulturalUse(
             category="identitas_sosial",
@@ -480,6 +611,117 @@ def marriage_jenjem(
         javanese_calendar_cycles(first).neptu_total
         + javanese_calendar_cycles(second).neptu_total
     )
+
+
+def _build_naga_dina(
+    weton_jawa: str,
+    dinapitu: str,
+    pasaran: str,
+    neptu_total: int,
+) -> JavaneseNagaDina:
+    day_directions = NAGA_DINA_DAY_DIRECTIONS[dinapitu]
+    pasaran_direction = NAGA_DINA_PASARAN_DIRECTIONS[pasaran]
+    neptu_cycle_direction = _naga_dina_neptu_direction(neptu_total)
+    day_text = _format_directions(day_directions)
+    summary = (
+        f"Varian default sistem memakai pepali arah: {dinapitu} berada di {day_text} "
+        f"dan {pasaran} di {pasaran_direction}. Varian boyongan-neptu memutar jumlah "
+        f"{neptu_total} ke {neptu_cycle_direction}."
+    )
+
+    return JavaneseNagaDina(
+        weton_jawa=weton_jawa,
+        default_variant_code="pepali_arah",
+        default_variant_label="Pepali arah hari-pasaran",
+        day_directions=day_directions,
+        pasaran_direction=pasaran_direction,
+        neptu_cycle_total=neptu_total,
+        neptu_cycle_direction=neptu_cycle_direction,
+        summary=summary,
+        variants=(
+            JavaneseNagaDinaVariant(
+                code="pepali_arah",
+                label="Pepali arah hari-pasaran",
+                source_label="Unej 2017 (Desa Ajung, Jember)",
+                basis=(
+                    f"Hari {dinapitu} ditempatkan di {day_text} dan pasaran {pasaran} "
+                    f"ditempatkan di {pasaran_direction}."
+                ),
+                directions=day_directions + (pasaran_direction,),
+                note="Sistem memilih varian ini sebagai default karena hari dan pasaran dipetakan secara eksplisit.",
+            ),
+            JavaneseNagaDinaVariant(
+                code="boyongan_neptu",
+                label="Boyongan neptu berputar",
+                source_label="Unej 2022 (Kenduri boyongan Pojokrejo)",
+                basis=(
+                    f"Jumlah angka hari-pasaran {neptu_total} diputar pada urutan "
+                    "Timur-Selatan-Barat-Utara."
+                ),
+                directions=(neptu_cycle_direction,),
+                note=f"Dengan neptu {neptu_total}, arah sial jatuh ke {neptu_cycle_direction}.",
+            ),
+        ),
+    )
+
+
+def _build_lunar_dates(
+    target_date: date,
+    year_cycle: JavaneseYearCycle,
+) -> tuple[JavaneseLunarDate, HijriDate]:
+    day_of_year = (target_date - year_cycle.year_start_date).days
+    month_number, day = _lunar_month_day(day_of_year, year_cycle.year_length_days)
+    hijri_year_number = year_cycle.year_number - _JAVANESE_TO_HIJRI_YEAR_OFFSET
+
+    return (
+        JavaneseLunarDate(
+            day=day,
+            month_number=month_number,
+            month_name=JAVANESE_MONTH_NAMES[month_number - 1],
+            year_number=year_cycle.year_number,
+            year_name=year_cycle.year_name,
+        ),
+        HijriDate(
+            day=day,
+            month_number=month_number,
+            month_name=HIJRI_MONTH_NAMES[month_number - 1],
+            year_number=hijri_year_number,
+        ),
+    )
+
+
+
+def _lunar_month_day(day_of_year: int, year_length_days: int) -> tuple[int, int]:
+    remaining_days = day_of_year
+    for month_number, month_length in enumerate(_lunar_month_lengths(year_length_days), start=1):
+        if remaining_days < month_length:
+            return month_number, remaining_days + 1
+        remaining_days -= month_length
+
+    raise ValueError(
+        f"Offset hari lunar {day_of_year} berada di luar panjang tahun {year_length_days}."
+    )
+
+
+
+def _lunar_month_lengths(year_length_days: int) -> tuple[int, ...]:
+    if year_length_days not in {354, 355}:
+        raise ValueError(f"Panjang tahun lunar {year_length_days} tidak didukung.")
+
+    return (30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, year_length_days - 325)
+
+
+
+def _naga_dina_neptu_direction(total: int) -> str:
+    return NAGA_DINA_NEPTU_ROTATION[(total - 1) % len(NAGA_DINA_NEPTU_ROTATION)]
+
+
+def _format_directions(directions: tuple[str, ...]) -> str:
+    if len(directions) == 1:
+        return directions[0]
+    if len(directions) == 2:
+        return f"{directions[0]} dan {directions[1]}"
+    return ", ".join(directions[:-1]) + f", dan {directions[-1]}"
 
 
 def _coerce_date(value: date | datetime | str) -> date:
@@ -578,7 +820,3 @@ def _javanese_year_length_pre_asapon(year_number: int) -> int:
 
     year_name = _year_name(year_number)
     return 355 if year_name in leap_years else 354
-
-
-
-

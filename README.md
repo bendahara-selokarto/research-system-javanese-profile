@@ -10,6 +10,8 @@ Isi repo:
 
 - kalkulasi kalender Jawa: hari, pasaran, weton, neptu, wuku
 - kalkulasi siklus tahun Jawa: taun, windu, kurup, dan kelanjutan angka tahun Saka
+- kalkulasi tanggal Jawa lengkap: tanggal, bulan, tahun Jawa, dan padanan Hijriyah
+- petungan naga dina dengan varian pepali arah dan boyongan-neptu
 - ringkasan profil hari Jawa
 - hitung kecocokan jodoh berbasis jenjem
 - saran hari baik untuk beberapa jenis acara
@@ -76,16 +78,17 @@ output/YYYY-MM-DD.docx
 
 Jika file sudah ada, nama file akan diberi suffix otomatis seperti `-2`, `-3`, dan seterusnya.
 Untuk mode pasangan, nama file akan menjadi `output/YYYY-MM-DD-partner-YYYY-MM-DD.docx`.
-Dokumen output kini juga memuat taun Jawa, windu, kurup, dan catatan bahwa angka tahun Jawa Sultan Agungan meneruskan penomoran Saka.
+Dokumen output kini juga memuat tanggal Jawa lengkap, padanan Hijriyah, taun Jawa, windu, kurup, petungan naga dina, dan catatan bahwa angka tahun Jawa Sultan Agungan meneruskan penomoran Saka.
 
 ## API Python
 
 ```python
 from research_system.commands.javanese_profile import write_profile_docx
-from research_system.utils import compatibility_result, javanese_day_profile
+from research_system.utils import compatibility_result, javanese_day_profile, javanese_naga_dina
 
 profile = javanese_day_profile("1990-04-25")
 print(profile.identity.year_cycle)
+print(javanese_naga_dina("1990-04-25").summary)
 compat = compatibility_result("2025-01-14", "2025-01-05")
 artifact = write_profile_docx("1990-04-25")
 ```
@@ -95,6 +98,8 @@ Catatan:
 - Repo ini sengaja mempertahankan path import `research_system.commands.javanese_profile`.
 - Dependensi dibuat minimal agar repo ini bisa berdiri sendiri.
 - Hitungan exact taun, windu, dan kurup diimplementasikan dengan dua jangkar sumber: epoch Sultan Agungan 8 Juli 1633 dan jangkar Asapon 25 Maret 1936, lalu diturunkan ke siklus tahun Jawa modern yang dipakai sistem.
+- Modul naga dina disimpan terpisah dari hitungan weton utama. Default sistem memakai varian pepali arah hari-pasaran, sedangkan varian boyongan-neptu tetap ditampilkan sebagai pembanding karena sumber lokal menunjukkan praktik yang tidak tunggal.
+- Ringkasan sumber analisa tersimpan di folder `docs/` sebagai markdown bertimestamp.
 
 ## Test
 
@@ -103,4 +108,3 @@ python -m pytest
 ```
 
 Workflow CI akan menjalankan test otomatis pada Python 3.11 dan 3.12 setiap push ke `main` dan setiap pull request.
-

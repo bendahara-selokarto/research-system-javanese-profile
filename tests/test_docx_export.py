@@ -19,6 +19,14 @@ def output_dir() -> Iterator[Path]:
         yield Path(tmp_dir)
 
 
+
+def _document_text(document: Document) -> str:
+    parts = [paragraph.text for paragraph in document.paragraphs]
+    parts.extend(cell.text for table in document.tables for row in table.rows for cell in row.cells)
+    return "\n".join(parts)
+
+
+
 def test_docx_export_contains_summary() -> None:
     with output_dir() as artifact_dir:
         artifact = write_profile_docx(
@@ -29,14 +37,19 @@ def test_docx_export_contains_summary() -> None:
         )
 
         doc = Document(artifact)
-        text = "\n".join(p.text for p in doc.paragraphs)
+        text = _document_text(doc)
         assert "Rebo Pon" in text
         assert "nikah" in text.lower()
         assert "jenjem" in text.lower()
         assert "kurup" in text.lower()
         assert "saka" in text.lower()
+        assert "naga dina" in text.lower()
+        assert "pepali arah" in text.lower()
+        assert "tanggal jawa" in text.lower()
+        assert "tanggal hijriyah" in text.lower()
         assert artifact.name == "1990-04-25-partner-2025-01-14.docx"
         del doc
+
 
 
 def test_docx_export_uses_unique_name_for_repeat_runs() -> None:
@@ -52,6 +65,7 @@ def test_docx_export_uses_unique_name_for_repeat_runs() -> None:
 
         assert first_artifact.name == "1990-04-25.docx"
         assert second_artifact.name == "1990-04-25-2.docx"
+
 
 
 def test_docx_export_uses_unique_name_for_repeat_partner_runs() -> None:

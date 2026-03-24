@@ -44,6 +44,15 @@ def _next_artifact_path(output_dir: Path, stem: str) -> Path:
         suffix += 1
 
 
+def _human_join(values: Iterable[str]) -> str:
+    parts = tuple(values)
+    if len(parts) == 1:
+        return parts[0]
+    if len(parts) == 2:
+        return f"{parts[0]} dan {parts[1]}"
+    return ", ".join(parts[:-1]) + f", dan {parts[-1]}"
+
+
 def write_profile_docx(
     target_date: date | str,
     partner_date: date | str | None = None,
@@ -63,18 +72,35 @@ def write_profile_docx(
 
     document.add_heading("Identitas dasar", level=2)
     table = document.add_table(rows=0, cols=2)
-    for label, value in (
+    identity_rows = [
         ("Hari", profile.identity.hari),
         ("Dinapitu", profile.identity.dinapitu),
         ("Pasaran", profile.identity.pasaran),
-        ("Weton Jawa", profile.identity.weton_jawa),
-        ("Wuku", profile.identity.wuku),
-        ("Neptu total / jenjem", str(profile.identity.neptu_total)),
-        ("Watak singkat", get_watak_profile(target)),
-    ):
+    ]
+    if profile.identity.javanese_date is not None and profile.identity.hijri_date is not None:
+        identity_rows.extend(
+            [
+                ("Tanggal Jawa", profile.identity.javanese_date.formatted),
+                ("Tanggal Hijriyah", profile.identity.hijri_date.formatted),
+            ]
+        )
+    identity_rows.extend(
+        [
+            ("Weton Jawa", profile.identity.weton_jawa),
+            ("Wuku", profile.identity.wuku),
+            ("Neptu total / jenjem", str(profile.identity.neptu_total)),
+            ("Watak singkat", get_watak_profile(target)),
+        ]
+    )
+    for label, value in identity_rows:
         row = table.add_row().cells
         row[0].text = label
         row[1].text = value
+
+    if profile.identity.javanese_date is not None and profile.identity.hijri_date is not None:
+        document.add_paragraph(
+            "Tanggal Jawa pada sistem ini mengikuti hitungan lunar yang disejajarkan dengan kalender Hijriyah."
+        )
 
     document.add_heading("Siklus tahun Jawa", level=2)
     if profile.identity.year_cycle is not None:
@@ -104,6 +130,24 @@ def write_profile_docx(
         document.add_paragraph(
             "Hitungan exact nama taun, windu, dan kurup belum ditampilkan untuk tanggal ini karena berada di luar rentang kurup baku yang diimplementasikan sistem."
         )
+
+    naga_dina = profile.identity.naga_dina
+    document.add_heading("Naga dina", level=2)
+    document.add_paragraph(naga_dina.summary)
+    naga_table = document.add_table(rows=0, cols=2)
+    for label, value in (
+        ("Varian default sistem", naga_dina.default_variant_label),
+        ("Posisi hari", f"{profile.identity.dinapitu}: {_human_join(naga_dina.day_directions)}"),
+        ("Posisi pasaran", f"{profile.identity.pasaran}: {naga_dina.pasaran_direction}"),
+        ("Varian pembanding", "Boyongan neptu berputar"),
+        ("Arah dari jumlah neptu", f"{naga_dina.neptu_cycle_total} -> {naga_dina.neptu_cycle_direction}"),
+    ):
+        row = naga_table.add_row().cells
+        row[0].text = label
+        row[1].text = value
+
+    for variant in naga_dina.variants:
+        document.add_paragraph(f"{variant.label}: {variant.basis} {variant.note} [{variant.source_label}]")
 
     document.add_heading("Selapan dan wetonan berikutnya", level=2)
     document.add_paragraph(
