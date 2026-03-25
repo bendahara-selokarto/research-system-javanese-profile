@@ -143,7 +143,7 @@ def test_day_profile_bundle_and_selapan() -> None:
     assert "1990-05-30" in uses["ritual_wetonan"].description
     assert str(profile.identity.year_cycle.year_number) in uses["siklus_tahun_jawa"].description
     assert "neptu 14" in uses["kecocokan_jodoh"].description
-    assert "nikah" in uses["hari_baik_keputusan"].description
+    assert "selamatan" in uses["hari_baik_keputusan"].description
     assert "Barat Laut" in uses["naga_dina"].description
     assert "Selatan" in uses["naga_dina"].description
     assert "Pon" in uses["identitas_sosial"].description
@@ -170,6 +170,13 @@ def test_hari_baik_advice_starts_when_supported_event() -> None:
     assert advice.event == "nikah"
     assert advice.reason == EVENT_GUIDELINES["nikah"]["reason"]
     assert advice.is_good is False
+
+
+
+def test_hari_baik_advice_supports_selamatan() -> None:
+    advice = hari_baik_advice("2021-08-10", "selamatan")
+    assert advice.event == "selamatan"
+    assert advice.reason == EVENT_GUIDELINES["selamatan"]["reason"]
 
 
 

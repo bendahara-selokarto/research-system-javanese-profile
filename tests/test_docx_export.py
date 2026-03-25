@@ -40,6 +40,7 @@ def test_docx_export_contains_summary() -> None:
         text = _document_text(doc)
         assert "Rebo Pon" in text
         assert "nikah" in text.lower()
+        assert "selamatan" in text.lower()
         assert "jenjem" in text.lower()
         assert "kurup" in text.lower()
         assert "saka" in text.lower()

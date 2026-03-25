@@ -14,7 +14,7 @@ Isi repo:
 - petungan naga dina dengan varian pepali arah dan boyongan-neptu
 - ringkasan profil hari Jawa
 - hitung kecocokan jodoh berbasis jenjem
-- saran hari baik untuk beberapa jenis acara
+- saran hari baik untuk beberapa jenis acara, termasuk selamatan
 - ekspor profil ke file Word `.docx`
 - CLI `javanese-profile`
 

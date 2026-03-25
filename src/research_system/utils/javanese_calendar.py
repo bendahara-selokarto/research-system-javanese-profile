@@ -451,7 +451,7 @@ def javanese_day_profile(value: date | datetime | str) -> JavaneseDayProfile:
     selapan_day = identity.days_since_epoch % SELAPAN_CYCLE_DAYS + 1
     watak_profile = get_watak_profile(identity.gregorian_date)
     naga_dina = identity.naga_dina
-    supported_events = ("nikah", "rumah", "usaha", "tanam")
+    supported_events = ("nikah", "rumah", "usaha", "tanam", "selamatan")
     event_snapshot = ", ".join(
         f"{event} {'baik' if hari_baik_advice(identity.gregorian_date, event).is_good else 'tidak'}"
         for event in supported_events
@@ -521,7 +521,7 @@ def javanese_day_profile(value: date | datetime | str) -> JavaneseDayProfile:
                 f"Dengan neptu {identity.neptu_total}, ringkasan hari ini adalah: {event_snapshot}."
             ),
             example_question=(
-                f"Hari baik apa untuk nikah, pindah rumah, usaha, atau tanam jika acuannya {identity.weton_jawa}?"
+                f"Hari baik apa untuk nikah, pindah rumah, usaha, tanam, atau selamatan jika acuannya {identity.weton_jawa}?"
             ),
             requires_additional_input=True,
         ),
