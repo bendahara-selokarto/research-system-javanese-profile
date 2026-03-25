@@ -80,6 +80,13 @@ WINDU_NAMES = (
     "Sancaya",
     "Adi",
 )
+LAMBANG_BY_WINDU = {
+    "Kuntara": "Kulawu",
+    "Sangara": "Langkir",
+    "Sengara": "Langkir",
+    "Sancaya": "Kulawu",
+    "Adi": "Langkir",
+}
 JAVANESE_MONTH_NAMES = (
     "Sura",
     "Sapar",
@@ -353,6 +360,7 @@ class JavaneseYearCycle:
     year_start_date: date
     next_year_start_date: date
     windu_name: str
+    lambang_name: str
     windu_year_number: int
     kurup_code: str
     kurup_name: str
@@ -527,6 +535,14 @@ JAVANESE_PROFILE_BIBLIOGRAPHY = (
         applies_to="Tanggal Jawa lunar, kesinambungan angka Saka, dan jangkar 1 Sura 1555 AJ.",
         note="Dipakai sebagai basis historis bahwa reformasi Sultan Agung mempertahankan angka Saka tetapi memakai logika lunar yang selaras dengan Hijriyah.",
         url="https://www.kratonjogja.id/ragam/21-kalender-jawa-sultan-agungan/",
+    ),
+    JavaneseBibliographyEntry(
+        topic="Lambang windu",
+        source_kind="external",
+        citation='Karjanto dan Beauducel, "An ethnoarithmetic excursion into the Javanese calendar"',
+        applies_to="Pasangan nama windu dengan lambang Kulawu atau Langkir.",
+        note="Dipakai untuk mengikat label lambang ke windu setelah parity awal diverifikasi oleh sumber Kraton.",
+        url="https://arxiv.org/abs/2012.10064",
     ),
     JavaneseBibliographyEntry(
         topic="Verifikasi kurup modern",
@@ -710,17 +726,21 @@ def manual_calculation_detail(
                     formula=f"{year_cycle.year_start_date.isoformat()} <= tanggal < {year_cycle.next_year_start_date.isoformat()}",
                     result=(
                         f"{year_cycle.year_name} {year_cycle.year_number} / "
-                        f"{year_cycle.year_type} / kurup {year_cycle.kurup_code}"
+                        f"{year_cycle.year_type} / lambang {year_cycle.lambang_name} / "
+                        f"kurup {year_cycle.kurup_code}"
                     ),
                 ),
                 JavaneseCalculationStep(
                     section="Siklus taun Jawa",
-                    title="Posisi dalam windu",
+                    title="Posisi dalam windu dan lambang",
                     formula=(
                         f"({year_cycle.year_number} - {_EPOCH_JAVANESE_YEAR}) mod {len(JAVANESE_YEAR_NAMES)} + 1 = "
                         f"{year_cycle.windu_year_number}"
                     ),
-                    result=f"Windu {year_cycle.windu_name}, taun ke-{year_cycle.windu_year_number}",
+                    result=(
+                        f"Windu {year_cycle.windu_name}, lambang {year_cycle.lambang_name}, "
+                        f"taun ke-{year_cycle.windu_year_number}"
+                    ),
                 ),
                 JavaneseCalculationStep(
                     section="Siklus taun Jawa",
@@ -736,7 +756,7 @@ def manual_calculation_detail(
                 section="Siklus taun Jawa",
                 title="Ketersediaan data taun",
                 formula="Tanggal berada di luar rentang kurup baku yang diimplementasikan sistem",
-                result="Nama taun, windu, dan kurup exact tidak ditampilkan",
+                result="Nama taun, windu, lambang, dan kurup exact tidak ditampilkan",
             )
         )
 
@@ -948,17 +968,18 @@ def javanese_day_profile(value: date | datetime | str) -> JavaneseDayProfile:
     if identity.year_cycle is not None:
         summary += (
             f", taun {identity.year_cycle.year_name} {identity.year_cycle.year_number}, "
-            f"windu {identity.year_cycle.windu_name}, kurup {identity.year_cycle.kurup_code}."
+            f"windu {identity.year_cycle.windu_name}, lambang {identity.year_cycle.lambang_name}, "
+            f"kurup {identity.year_cycle.kurup_code}."
         )
         year_cycle_description = (
             f"Tanggal {identity.gregorian_date.isoformat()} masuk taun {identity.year_cycle.year_name} "
             f"{identity.year_cycle.year_number}, windu {identity.year_cycle.windu_name}, "
-            f"kurup {identity.year_cycle.kurup_code}."
+            f"lambang {identity.year_cycle.lambang_name}, kurup {identity.year_cycle.kurup_code}."
         )
     else:
         summary += "."
         year_cycle_description = (
-            f"Tanggal {identity.gregorian_date.isoformat()} belum terpetakan ke taun, windu, dan kurup exact di sistem ini."
+            f"Tanggal {identity.gregorian_date.isoformat()} belum terpetakan ke taun, windu, lambang, dan kurup exact di sistem ini."
         )
 
     naga_dina_description = (
@@ -991,7 +1012,9 @@ def javanese_day_profile(value: date | datetime | str) -> JavaneseDayProfile:
         JavaneseCulturalUse(
             category="siklus_tahun_jawa",
             description=year_cycle_description,
-            example_question=f"Tahun Jawa untuk {identity.gregorian_date.isoformat()} masuk taun apa dan windu apa?",
+            example_question=(
+                f"Tahun Jawa untuk {identity.gregorian_date.isoformat()} masuk taun apa, windu apa, dan lambang apa?"
+            ),
         ),
         JavaneseCulturalUse(
             category="pranata_mangsa",
@@ -1268,6 +1291,13 @@ def _kurup_for_year(year_number: int) -> dict[str, object] | None:
     return None
 
 
+def _lambang_name_for_windu(windu_name: str) -> str:
+    try:
+        return LAMBANG_BY_WINDU[windu_name]
+    except KeyError as exc:
+        raise ValueError(f"Windu '{windu_name}' belum punya mapping lambang di sistem ini.") from exc
+
+
 def _build_year_cycle(
     year_number: int,
     year_start_date: date,
@@ -1285,6 +1315,7 @@ def _build_year_cycle(
 
     windu_year_number = (year_number - _EPOCH_JAVANESE_YEAR) % len(JAVANESE_YEAR_NAMES) + 1
     windu_name = WINDU_NAMES[((year_number - _EPOCH_JAVANESE_YEAR) // len(JAVANESE_YEAR_NAMES)) % len(WINDU_NAMES)]
+    lambang_name = _lambang_name_for_windu(windu_name)
     return JavaneseYearCycle(
         year_number=year_number,
         saka_continuity_year=year_number,
@@ -1294,6 +1325,7 @@ def _build_year_cycle(
         year_start_date=year_start_date,
         next_year_start_date=next_year_start_date,
         windu_name=windu_name,
+        lambang_name=lambang_name,
         windu_year_number=windu_year_number,
         kurup_code=kurup["code"],
         kurup_name=kurup["name"],

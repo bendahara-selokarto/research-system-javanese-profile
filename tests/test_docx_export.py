@@ -42,6 +42,8 @@ def test_docx_export_contains_summary() -> None:
         assert "nikah" in text.lower()
         assert "selamatan" in text.lower()
         assert "jenjem" in text.lower()
+        assert "lambang" in text.lower()
+        assert "langkir" in text.lower()
         assert "kurup" in text.lower()
         assert "saka" in text.lower()
         assert "pranata mangsa" in text.lower()
@@ -74,6 +76,7 @@ def test_docx_export_can_embed_manual_trace_and_bibliography() -> None:
         assert "Pustaka dan basis aturan" in text
         assert "Pustaka dan Basis Aturan" in text
         assert "Kraton Yogyakarta" in text
+        assert "Lambang windu" in text
         del doc
 
 

@@ -163,6 +163,7 @@ def write_profile_docx(
             ("Nomor lanjutan Saka", str(year_cycle.saka_continuity_year)),
             ("Nama taun", year_cycle.year_name),
             ("Windu", year_cycle.windu_name),
+            ("Lambang", year_cycle.lambang_name),
             ("Tahun ke dalam windu", str(year_cycle.windu_year_number)),
             ("Jenis taun", f"{year_cycle.year_type} ({year_cycle.year_length_days} hari)"),
             (
@@ -176,11 +177,12 @@ def write_profile_docx(
 
         document.add_paragraph(
             "Nomor tahun Jawa Sultan Agungan meneruskan angka tahun Saka, "
-            "tetapi perhitungan tahunnya mengikuti pola lunar yang diselaraskan dengan Hijriah."
+            "tetapi perhitungan tahunnya mengikuti pola lunar yang diselaraskan dengan Hijriah. "
+            f"Dalam siklus tahun besarnya, {year_cycle.windu_name} berpasangan dengan lambang {year_cycle.lambang_name}."
         )
     else:
         document.add_paragraph(
-            "Hitungan exact nama taun, windu, dan kurup belum ditampilkan untuk tanggal ini karena berada di luar rentang kurup baku yang diimplementasikan sistem."
+            "Hitungan exact nama taun, windu, lambang, dan kurup belum ditampilkan untuk tanggal ini karena berada di luar rentang kurup baku yang diimplementasikan sistem."
         )
 
     pranata_mangsa = profile.identity.pranata_mangsa

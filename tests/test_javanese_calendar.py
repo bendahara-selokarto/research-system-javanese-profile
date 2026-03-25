@@ -12,6 +12,7 @@ from research_system.utils import (
     javanese_calendar_cycles,
     javanese_day_profile,
     javanese_naga_dina,
+    javanese_pranata_mangsa,
     javanese_year_cycle,
     marriage_jenjem,
 )
@@ -26,10 +27,12 @@ def test_epoch_matches_sultan_agungan_anchor() -> None:
     assert result.weton == "Jumat Legi"
     assert result.wuku == "Kulawu"
     assert result.neptu_total == 11
+    assert result.pranata_mangsa.name == "Kasa"
     assert result.year_cycle is not None
     assert result.year_cycle.year_number == 1555
     assert result.year_cycle.year_name == "Alip"
     assert result.year_cycle.windu_name == "Kuntara"
+    assert result.year_cycle.lambang_name == "Kulawu"
     assert result.year_cycle.kurup_code == "Aahgi"
     assert result.javanese_date is not None
     assert result.javanese_date.formatted == "1 Sura 1555 AJ"
@@ -44,6 +47,7 @@ def test_kurup_asapon_anchor_matches_falak_reference() -> None:
     assert result is not None
     assert result.year_number == 1867
     assert result.year_name == "Alip"
+    assert result.lambang_name == "Langkir"
     assert result.kurup_code == "Asapon"
     assert result.year_start_date == date(1936, 3, 25)
 
@@ -55,6 +59,7 @@ def test_kraton_reference_for_1_sura_jimawal_1957() -> None:
     assert result is not None
     assert result.year_number == 1957
     assert result.year_name == "Jimawal"
+    assert result.lambang_name == "Kulawu"
     assert result.kurup_code == "Asapon"
     assert result.year_start_date == date(2023, 7, 19)
 
@@ -67,6 +72,28 @@ def test_lunar_dates_follow_javanese_and_hijri_year_start() -> None:
     assert result.javanese_date.formatted == "1 Sura 1957 AJ"
     assert result.hijri_date is not None
     assert result.hijri_date.formatted == "1 Muharram 1445 H"
+
+
+
+def test_pranata_mangsa_matches_reference_range() -> None:
+    result = javanese_pranata_mangsa("2023-07-19")
+
+    assert result.name == "Kasa"
+    assert result.season == "Katiga"
+    assert result.duration_days == 41
+    assert result.start_date == date(2023, 6, 22)
+    assert result.end_date == date(2023, 8, 1)
+    assert result.candra == "Sotya murca saka embanan"
+
+
+
+def test_pranata_mangsa_extends_kawolu_in_leap_year() -> None:
+    result = javanese_pranata_mangsa("2024-02-29")
+
+    assert result.name == "Kawolu"
+    assert result.duration_days == 27
+    assert result.start_date == date(2024, 2, 3)
+    assert result.end_date == date(2024, 2, 29)
 
 
 
@@ -124,8 +151,10 @@ def test_day_profile_bundle_and_selapan() -> None:
     uses = {use.category: use for use in profile.common_uses}
 
     assert profile.summary.startswith("1990-04-25 = Rebo Pon, wuku Julungpujut, neptu 14")
+    assert "pranata mangsa Dhesta (Mareng)" in profile.summary
     assert "Hijriyah 29 Ramadan 1410 H" in profile.summary
     assert "tanggal Jawa 29 Pasa 1922 AJ" in profile.summary
+    assert "lambang Langkir" in profile.summary
     assert "kurup Asapon" in profile.summary
     assert profile.selapan_cycle_days == 35
     assert profile.selapan_day == 13
@@ -133,6 +162,8 @@ def test_day_profile_bundle_and_selapan() -> None:
     assert profile.next_three_weton_dates == (date(1990, 5, 30), date(1990, 7, 4), date(1990, 8, 8))
     assert profile.identity.weton_jawa == "Rebo Pon"
     assert profile.identity.year_cycle is not None
+    assert profile.identity.year_cycle.lambang_name == "Langkir"
+    assert profile.identity.pranata_mangsa.name == "Dhesta"
     assert profile.identity.javanese_date is not None
     assert profile.identity.javanese_date.month_name == "Pasa"
     assert profile.identity.hijri_date is not None
@@ -142,6 +173,9 @@ def test_day_profile_bundle_and_selapan() -> None:
     assert "Rebo Pon" in uses["watak_pribadi"].description
     assert "1990-05-30" in uses["ritual_wetonan"].description
     assert str(profile.identity.year_cycle.year_number) in uses["siklus_tahun_jawa"].description
+    assert "lambang Langkir" in uses["siklus_tahun_jawa"].description
+    assert "Dhesta" in uses["pranata_mangsa"].description
+    assert "Sotya sinara wedi" in uses["pranata_mangsa"].description
     assert "neptu 14" in uses["kecocokan_jodoh"].description
     assert "selamatan" in uses["hari_baik_keputusan"].description
     assert "Barat Laut" in uses["naga_dina"].description
@@ -190,5 +224,6 @@ def test_accepts_iso_and_datetime_inputs() -> None:
     iso_profile = javanese_day_profile("2021-08-10")
     datetime_profile = javanese_day_profile(datetime(2021, 8, 10, 22, 45, 0))
     assert iso_profile.identity.weton == datetime_profile.identity.weton
+    assert iso_profile.identity.pranata_mangsa == datetime_profile.identity.pranata_mangsa
     assert iso_profile.identity.javanese_date == datetime_profile.identity.javanese_date
     assert iso_profile.identity.hijri_date == datetime_profile.identity.hijri_date
