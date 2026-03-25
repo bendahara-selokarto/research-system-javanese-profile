@@ -5,6 +5,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Iterator
 
+from docx import Document
+
 from research_system.commands.javanese_profile import main
 from research_system.utils import javanese_profile_bibliography, manual_calculation_detail
 
@@ -15,6 +17,12 @@ def cli_output_dir() -> Iterator[Path]:
     base_dir.mkdir(exist_ok=True)
     with TemporaryDirectory(dir=base_dir) as tmp_dir:
         yield Path(tmp_dir)
+
+
+def _document_text(document: Document) -> str:
+    parts = [paragraph.text for paragraph in document.paragraphs]
+    parts.extend(cell.text for table in document.tables for row in table.rows for cell in row.cells)
+    return "\n".join(parts)
 
 
 def test_manual_calculation_detail_tracks_core_steps() -> None:
@@ -43,7 +51,7 @@ def test_bibliography_keeps_external_and_internal_entries_visible() -> None:
     assert all(entry.source_kind == "external" for entry in external_only)
 
 
-def test_main_prints_manual_trace_and_bibliography(capsys) -> None:
+def test_main_writes_manual_trace_and_bibliography_to_docx(capsys) -> None:
     with cli_output_dir() as output_dir:
         main(
             [
@@ -61,8 +69,15 @@ def test_main_prints_manual_trace_and_bibliography(capsys) -> None:
         )
 
         output = capsys.readouterr().out
-        assert "Detail Perhitungan Manual" in output
-        assert "Offset hari dari epoch" in output
-        assert "Pustaka dan Basis Aturan" in output
-        assert "Kraton Yogyakarta" in output
-        assert (output_dir / "1990-04-25-partner-2025-01-14.docx").exists()
+        artifact = output_dir / "1990-04-25-partner-2025-01-14.docx"
+        assert str(artifact) in output
+        assert "Detail Perhitungan Manual" not in output
+        assert "Pustaka dan Basis Aturan" not in output
+        assert artifact.exists()
+
+        doc = Document(artifact)
+        text = _document_text(doc)
+        assert "Detail Perhitungan Manual" in text
+        assert "Offset hari dari epoch" in text
+        assert "Pustaka dan Basis Aturan" in text
+        assert "Kraton Yogyakarta" in text

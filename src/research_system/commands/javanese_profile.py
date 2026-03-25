@@ -97,11 +97,18 @@ def _render_bibliography() -> str:
     return "\n".join(lines)
 
 
+def _append_text_block(document: Document, content: str) -> None:
+    for line in content.splitlines():
+        document.add_paragraph(line)
+
+
 def write_profile_docx(
     target_date: date | str,
     partner_date: date | str | None = None,
     events: Iterable[str] | None = None,
     output_dir: Path | None = None,
+    include_manual_calculation: bool = False,
+    include_bibliography: bool = False,
 ) -> Path:
     target = _parse_date(target_date) if isinstance(target_date, str) else target_date
     partner = _parse_date(partner_date) if isinstance(partner_date, str) else partner_date
@@ -247,6 +254,17 @@ def write_profile_docx(
             f"{event.title()}: {'Baik' if advice.is_good else 'Tidak baik'} - {advice.reason} ({advice.note})"
         )
 
+    if include_manual_calculation:
+        document.add_heading("Detail perhitungan manual", level=2)
+        _append_text_block(
+            document,
+            _render_manual_calculation(target, partner_date=partner, events=events_to_check),
+        )
+
+    if include_bibliography:
+        document.add_heading("Pustaka dan basis aturan", level=2)
+        _append_text_block(document, _render_bibliography())
+
     document.save(artifact)
     return artifact
 
@@ -295,14 +313,10 @@ def main(argv: list[str] | None = None) -> None:
         partner_date=args.partner_date,
         events=args.events,
         output_dir=args.output_dir,
+        include_manual_calculation=args.detail_perhitungan_manual,
+        include_bibliography=args.pustaka,
     )
     print(f"{artifact} telah dibuat.")
-    if args.detail_perhitungan_manual:
-        print()
-        print(_render_manual_calculation(args.date, partner_date=args.partner_date, events=args.events))
-    if args.pustaka:
-        print()
-        print(_render_bibliography())
 
 
 if __name__ == "__main__":

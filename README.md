@@ -71,7 +71,7 @@ Simpan ke folder tertentu:
 javanese-profile --date 1990-04-25 --output-dir output
 ```
 
-Tampilkan jejak hitung manual dan basis sumber:
+Sisipkan jejak hitung manual dan basis sumber ke dokumen:
 
 ```bash
 javanese-profile --date 1990-04-25 --detail-perhitungan-manual --pustaka
@@ -86,7 +86,7 @@ output/YYYY-MM-DD.docx
 Jika file sudah ada, nama file akan diberi suffix otomatis seperti `-2`, `-3`, dan seterusnya.
 Untuk mode pasangan, nama file akan menjadi `output/YYYY-MM-DD-partner-YYYY-MM-DD.docx`.
 Dokumen output kini juga memuat tanggal Jawa lengkap, padanan Hijriyah, pranata mangsa, taun Jawa, windu, kurup, petungan naga dina, dan catatan bahwa angka tahun Jawa Sultan Agungan meneruskan penomoran Saka.
-Flag `--detail-perhitungan-manual` menampilkan jejak formula yang dipakai sistem untuk audit riwayat hitung. Flag `--pustaka` menampilkan sumber eksternal dan aturan internal repo agar hasil tidak diperlakukan sebagai keputusan final tanpa konteks sumber.
+Flag `--detail-perhitungan-manual` menyisipkan jejak formula yang dipakai sistem ke dokumen untuk audit riwayat hitung. Flag `--pustaka` menyisipkan sumber eksternal dan aturan internal repo ke dokumen agar hasil tidak diperlakukan sebagai keputusan final tanpa konteks sumber.
 
 ## API Python
 
