@@ -14,6 +14,8 @@ from research_system.utils import (
     get_watak_profile,
     hari_baik_advice,
     javanese_day_profile,
+    javanese_profile_bibliography,
+    manual_calculation_detail,
 )
 
 
@@ -53,6 +55,48 @@ def _human_join(values: Iterable[str]) -> str:
     return ", ".join(parts[:-1]) + f", dan {parts[-1]}"
 
 
+def _render_manual_calculation(
+    target_date: date,
+    partner_date: date | None = None,
+    events: Iterable[str] | None = None,
+) -> str:
+    report = manual_calculation_detail(target_date, partner=partner_date, events=tuple(events) if events is not None else None)
+    lines = [
+        "Detail Perhitungan Manual",
+        "Jejak ini melacak cara sistem menghitung; bukan putusan final tunggal tradisi.",
+        report.summary,
+    ]
+    current_section: str | None = None
+    for step in report.steps:
+        if step.section != current_section:
+            lines.append("")
+            lines.append(f"[{step.section}]")
+            current_section = step.section
+        lines.append(f"- {step.title}")
+        lines.append(f"  Formula: {step.formula}")
+        lines.append(f"  Hasil: {step.result}")
+        if step.note is not None:
+            lines.append(f"  Catatan: {step.note}")
+    return "\n".join(lines)
+
+
+def _render_bibliography() -> str:
+    lines = [
+        "Pustaka dan Basis Aturan",
+        "Daftar ini memisahkan sumber eksternal dari aturan internal repo agar jejak sumber tetap auditabel.",
+    ]
+    for entry in javanese_profile_bibliography():
+        tag = "eksternal" if entry.source_kind == "external" else "internal"
+        lines.append("")
+        lines.append(f"- {entry.topic} [{tag}]")
+        lines.append(f"  Sitasi: {entry.citation}")
+        if entry.url is not None:
+            lines.append(f"  URL: {entry.url}")
+        lines.append(f"  Dipakai untuk: {entry.applies_to}")
+        lines.append(f"  Catatan: {entry.note}")
+    return "\n".join(lines)
+
+
 def write_profile_docx(
     target_date: date | str,
     partner_date: date | str | None = None,
@@ -88,6 +132,7 @@ def write_profile_docx(
         [
             ("Weton Jawa", profile.identity.weton_jawa),
             ("Wuku", profile.identity.wuku),
+            ("Pranata mangsa", f"{profile.identity.pranata_mangsa.formatted} ({profile.identity.pranata_mangsa.season})"),
             ("Neptu total / jenjem", str(profile.identity.neptu_total)),
             ("Watak singkat", get_watak_profile(target)),
         ]
@@ -130,6 +175,25 @@ def write_profile_docx(
         document.add_paragraph(
             "Hitungan exact nama taun, windu, dan kurup belum ditampilkan untuk tanggal ini karena berada di luar rentang kurup baku yang diimplementasikan sistem."
         )
+
+    pranata_mangsa = profile.identity.pranata_mangsa
+    document.add_heading("Pranata mangsa", level=2)
+    pranata_table = document.add_table(rows=0, cols=2)
+    for label, value in (
+        ("Mangsa", pranata_mangsa.formatted),
+        ("Musim utama", pranata_mangsa.season),
+        ("Rentang Masehi", pranata_mangsa.period),
+        ("Umur mangsa", f"{pranata_mangsa.duration_days} hari"),
+        ("Candra", pranata_mangsa.candra),
+    ):
+        row = pranata_table.add_row().cells
+        row[0].text = label
+        row[1].text = value
+    document.add_paragraph(f"Tanda alam: {pranata_mangsa.natural_signs}")
+    document.add_paragraph(f"Panduan budaya/tani: {pranata_mangsa.farming_guidance}")
+    document.add_paragraph(
+        "Pranata mangsa di sistem ini diposisikan sebagai kalender musim-solar Jawa yang berjalan terpisah dari weton dan tanggal Jawa lunar."
+    )
 
     naga_dina = profile.identity.naga_dina
     document.add_heading("Naga dina", level=2)
@@ -187,7 +251,7 @@ def write_profile_docx(
     return artifact
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
         description="Generate a Word document that profiles a Javanese hari or weton."
     )
@@ -214,8 +278,18 @@ def main() -> None:
         default=Path("output"),
         help="Direktori tempat menyimpan file .docx.",
     )
+    parser.add_argument(
+        "--detail-perhitungan-manual",
+        action="store_true",
+        help="Tampilkan jejak formula yang dipakai sistem untuk tanggal dan input yang dipilih.",
+    )
+    parser.add_argument(
+        "--pustaka",
+        action="store_true",
+        help="Tampilkan daftar sumber eksternal dan aturan internal yang menjadi basis output sistem.",
+    )
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     artifact = write_profile_docx(
         args.date,
         partner_date=args.partner_date,
@@ -223,6 +297,12 @@ def main() -> None:
         output_dir=args.output_dir,
     )
     print(f"{artifact} telah dibuat.")
+    if args.detail_perhitungan_manual:
+        print()
+        print(_render_manual_calculation(args.date, partner_date=args.partner_date, events=args.events))
+    if args.pustaka:
+        print()
+        print(_render_bibliography())
 
 
 if __name__ == "__main__":

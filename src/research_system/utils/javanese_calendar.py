@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from calendar import isleap
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 
@@ -241,6 +242,106 @@ EVENT_GUIDELINES = {
     },
 }
 
+PRANATA_MANGSA_DEFINITIONS = (
+    {
+        "name": "Kasa",
+        "season": "Katiga",
+        "candra": "Sotya murca saka embanan",
+        "natural_signs": "Daun-daun mulai berguguran dan udara cenderung kering terang.",
+        "farming_guidance": "Biasanya dipakai untuk membersihkan sisa jerami dan mulai menanam palawija.",
+        "duration_days": 41,
+    },
+    {
+        "name": "Karo",
+        "season": "Katiga",
+        "candra": "Bantala rengka",
+        "natural_signs": "Tanah mulai retak dan hawa panas terasa lebih keras.",
+        "farming_guidance": "Petani menjaga palawija dan mulai mengantisipasi masa paceklik.",
+        "duration_days": 23,
+    },
+    {
+        "name": "Katelu",
+        "season": "Katiga",
+        "candra": "Suta manut ing bapa",
+        "natural_signs": "Kemarau mencapai puncaknya dan air makin terbatas.",
+        "farming_guidance": "Masa yang lazim dikaitkan dengan panen palawija dan penghematan air.",
+        "duration_days": 24,
+    },
+    {
+        "name": "Kapat",
+        "season": "Labuh",
+        "candra": "Waspa kumembeng jroning kalbu",
+        "natural_signs": "Kemarau mulai surut dan tanda-tanda pancaroba mulai tampak.",
+        "farming_guidance": "Sawah disiapkan untuk persemaian dan penataan lahan awal.",
+        "duration_days": 25,
+    },
+    {
+        "name": "Kalima",
+        "season": "Labuh",
+        "candra": "Pancuran emas sumawur ing jagad",
+        "natural_signs": "Udara mulai basah dan aliran air mulai lebih mudah dijumpai.",
+        "farming_guidance": "Umumnya dipakai untuk mengolah sawah, memperbaiki irigasi, dan menyebar padi gogo.",
+        "duration_days": 27,
+    },
+    {
+        "name": "Kanem",
+        "season": "Labuh",
+        "candra": "Rasa mulyo kasucian",
+        "natural_signs": "Sawah kembali hijau dan air mulai mengalir lebih jernih.",
+        "farming_guidance": "Petani mulai membajak sawah dan menyiapkan tanam utama.",
+        "duration_days": 43,
+    },
+    {
+        "name": "Kapitu",
+        "season": "Rendheng",
+        "candra": "Wisa kentaring maruta",
+        "natural_signs": "Curah hujan tinggi, angin kuat, dan sungai kerap meluap.",
+        "farming_guidance": "Bibit lazim mulai disemai di pawinihan saat air melimpah.",
+        "duration_days": 43,
+    },
+    {
+        "name": "Kawolu",
+        "season": "Rendheng",
+        "candra": "Anjrah jroning kayun",
+        "natural_signs": "Tanaman sawah menghijau dan batang padi mulai meninggi.",
+        "farming_guidance": "Fokus berpindah ke perawatan tanaman dan pengaturan air sawah.",
+        "duration_days": 26,
+        "leap_duration_days": 27,
+    },
+    {
+        "name": "Kasanga",
+        "season": "Rendheng",
+        "candra": "Wedaring wacara mulyo",
+        "natural_signs": "Sebagian padi mulai berbunga dan sebagian lain mulai berbuah.",
+        "farming_guidance": "Masa ini biasa dipakai untuk menjaga fase pengisian bulir dan hama.",
+        "duration_days": 25,
+    },
+    {
+        "name": "Kasadasa",
+        "season": "Mareng",
+        "candra": "Gedhong minep jroning kalbu",
+        "natural_signs": "Padi mulai menguning dan udara bergerak menuju akhir musim hujan.",
+        "farming_guidance": "Saat yang lazim dianggap tepat untuk panen padi gogo awal.",
+        "duration_days": 24,
+    },
+    {
+        "name": "Dhesta",
+        "season": "Mareng",
+        "candra": "Sotya sinara wedi",
+        "natural_signs": "Telur burung mulai menetas dan panen padi mulai berlangsung.",
+        "farming_guidance": "Panen makin aktif sambil bersiap menghadapi kemarau berikutnya.",
+        "duration_days": 23,
+    },
+    {
+        "name": "Sadha",
+        "season": "Mareng",
+        "candra": "Tirta sah saking sasana",
+        "natural_signs": "Udara pagi terasa dingin dan sawah tinggal batang padi kering.",
+        "farming_guidance": "Padi dijemur dan dimasukkan ke lumbung sebelum siklus kembali ke Kasa.",
+        "duration_days": 41,
+    },
+)
+
 
 @dataclass(frozen=True, slots=True)
 class JavaneseYearCycle:
@@ -285,6 +386,28 @@ class HijriDate:
 
 
 @dataclass(frozen=True, slots=True)
+class JavanesePranataMangsa:
+    index: int
+    name: str
+    season: str
+    candra: str
+    natural_signs: str
+    farming_guidance: str
+    duration_days: int
+    cycle_start_year: int
+    start_date: date
+    end_date: date
+
+    @property
+    def formatted(self) -> str:
+        return f"Mangsa {self.name}"
+
+    @property
+    def period(self) -> str:
+        return f"{self.start_date.isoformat()} s.d. {self.end_date.isoformat()}"
+
+
+@dataclass(frozen=True, slots=True)
 class JavaneseNagaDinaVariant:
     code: str
     label: str
@@ -321,6 +444,7 @@ class JavaneseCalendarCycles:
     wuku: str
     days_since_epoch: int
     pawukon_day: int
+    pranata_mangsa: JavanesePranataMangsa
     year_cycle: JavaneseYearCycle | None
     javanese_date: JavaneseLunarDate | None
     hijri_date: HijriDate | None
@@ -368,6 +492,354 @@ class JavaneseHariBaikAdvice:
     note: str
 
 
+@dataclass(frozen=True, slots=True)
+class JavaneseCalculationStep:
+    section: str
+    title: str
+    formula: str
+    result: str
+    note: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class JavaneseManualCalculation:
+    target_date: date
+    weton_jawa: str
+    summary: str
+    steps: tuple[JavaneseCalculationStep, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class JavaneseBibliographyEntry:
+    topic: str
+    source_kind: str
+    citation: str
+    applies_to: str
+    note: str
+    url: str | None = None
+
+
+JAVANESE_PROFILE_BIBLIOGRAPHY = (
+    JavaneseBibliographyEntry(
+        topic="Kalender Jawa Sultan Agungan",
+        source_kind="external",
+        citation='Kraton Yogyakarta, "Kalender Jawa Sultan Agungan"',
+        applies_to="Tanggal Jawa lunar, kesinambungan angka Saka, dan jangkar 1 Sura 1555 AJ.",
+        note="Dipakai sebagai basis historis bahwa reformasi Sultan Agung mempertahankan angka Saka tetapi memakai logika lunar yang selaras dengan Hijriyah.",
+        url="https://www.kratonjogja.id/ragam/21-kalender-jawa-sultan-agungan/",
+    ),
+    JavaneseBibliographyEntry(
+        topic="Verifikasi kurup modern",
+        source_kind="external",
+        citation='Kraton Yogyakarta, "Hajad Kawula Dalem Mubeng Beteng 1 Sura Jimawal 1957"',
+        applies_to="Verifikasi bahwa 2023-07-19 jatuh pada 1 Sura Jimawal 1957.",
+        note="Dipakai untuk menguji jangkar modern sistem terhadap publikasi Kraton.",
+        url="https://www.kratonjogja.id/peristiwa/1274-hajad-kawula-dalem-mubeng-beteng-1-sura-jimawal-1957-kembali-diselenggarakan-secara-langsung/",
+    ),
+    JavaneseBibliographyEntry(
+        topic="Kurup dan taun wuntu/wastu",
+        source_kind="external",
+        citation='UIN Maulana Malik Ibrahim Malang, "Penyesuaian Kalender Saka dengan Kalender Hijriyah dan Aplikasinya dalam Penentuan Awal Bulan Qomariyah"',
+        applies_to="Urutan kurup dan pola taun panjang pada fase Aahgi, Amiswon, Aboge, dan Asapon.",
+        note="Repo memakai sumber ini untuk membedakan pola taun panjang per kurup, lalu menurunkannya ke aturan hitung modern.",
+        url="https://syariah.uin-malang.ac.id/ar/penyesuaian-kalender-saka-dengan-kalender-hijriyah-dan-aplikasinya-dalam-penentuan-awal-bulan-qomariyah/",
+    ),
+    JavaneseBibliographyEntry(
+        topic="Akulturasi Saka-Hijriyah",
+        source_kind="external",
+        citation='Garuda Kemdikbud, "Pengaruh Islam Terhadap Kalender Masyarakat Jawa"',
+        applies_to="Konteks perubahan kalender Jawa dari basis Saka ke sistem lunar Islam-Jawa.",
+        note="Dipakai sebagai sumber pendukung untuk menjelaskan reformasi kalender, bukan sebagai tabel hitung utama.",
+        url="https://download.garuda.kemdikbud.go.id/article.php?article=1093555&title=Pengaruh+Islam+Terhadap+Kalender+Masyarakat+Jawa&val=6177",
+    ),
+    JavaneseBibliographyEntry(
+        topic="Pranata mangsa",
+        source_kind="external",
+        citation="Ahmad Musta'id, Journal of Islamic History, 2021",
+        applies_to="Urutan mangsa, candra, tanda alam, dan panduan tani.",
+        note="Dipakai untuk isi deskriptif setiap mangsa dalam sistem.",
+        url="https://download.garuda.kemdikbud.go.id/article.php?article=2910641&title=Perubahan+Perilaku+Masyarakat+Petani+Muslim+Undaan+Kudus+terhadap+Sistem+Penanggalan+Jawa+Pranata+Mangsa+2000-2018+Changes+in+the+Behavior+of+the+Undaan+Kudus+Muslim+Farming+Society+towards+the+Pranata+Mangsa+Javanese+Calendar+System+2000-2018&val=25538",
+    ),
+    JavaneseBibliographyEntry(
+        topic="Pranata mangsa modern",
+        source_kind="external",
+        citation='Riszky Dwi Wirastuti dkk., "Nilai Luhur Pranata Mangsa dalam Sistem Pertanian Modern", Jurnal Hijau Cendekia, 2016',
+        applies_to="Panjang mangsa yang tidak seragam dan konteks pranata mangsa sebagai kalender musim.",
+        note="Dipakai sebagai pembanding terhadap tabel panjang mangsa yang dipakai repo.",
+        url="https://download.garuda.kemdikbud.go.id/article.php?article=964870&title=NILAI+LUHUR+PRANATA+MANGSA+DALAM+SISTEM+PERTANIAN+MODERN&val=14841",
+    ),
+    JavaneseBibliographyEntry(
+        topic="Kawolu tahun kabisat",
+        source_kind="external",
+        citation='Sustainability (MDPI), "Adaptation to Extreme Hydrological Events by Javanese Society through Local Knowledge", 2020',
+        applies_to="Validasi bahwa siklus pranata mangsa dimulai sekitar 22 Juni dan Kawolu menjadi 27 hari pada tahun kabisat.",
+        note="Dipakai untuk memverifikasi pengecualian Februari kabisat pada mangsa Kawolu.",
+        url="https://www.mdpi.com/2071-1050/12/24/10373",
+    ),
+    JavaneseBibliographyEntry(
+        topic="Naga dina sebagai keluarga petungan",
+        source_kind="external",
+        citation="ENGGANG: Jurnal Pendidikan, Bahasa, Sastra, Seni, dan Budaya",
+        applies_to="Konteks bahwa naga dina, naga sasi, dan naga taun hidup sebagai petungan budaya.",
+        note="Dipakai untuk menempatkan modul naga dina sebagai satu keluarga petungan, bukan rumus tunggal yang universal.",
+        url="https://e-journal.upr.ac.id/index.php/enggang/article/view/7810",
+    ),
+    JavaneseBibliographyEntry(
+        topic="Varian naga dina default",
+        source_kind="external",
+        citation='Sofiatul Annisa, "Mitos Asal-Usul Sen-Essen Jhabah dalam Tradisi Menentukan Hari Baik di Desa Ajung Kabupaten Jember", Repository Universitas Jember, 2017',
+        applies_to="Pemetaan posisi naga berdasarkan dinapitu dan pasaran.",
+        note="Dipakai untuk varian default sistem yang memisahkan arah hari dan arah pasaran.",
+        url="https://repository.unej.ac.id/handle/123456789/80671",
+    ),
+    JavaneseBibliographyEntry(
+        topic="Varian naga dina pembanding",
+        source_kind="external",
+        citation='"Tradisi Kenduri Boyongan di Desa Pojokrejo Kecamatan Kesamben Kabupaten Jombang", Repository Universitas Jember, 2022',
+        applies_to="Perputaran arah sial dari jumlah neptu hari dan pasaran.",
+        note="Dipakai untuk varian pembanding boyongan-neptu yang tetap ditampilkan di output.",
+        url="https://repository.unej.ac.id/handle/123456789/111352",
+    ),
+    JavaneseBibliographyEntry(
+        topic="Watak weton",
+        source_kind="internal",
+        citation="Aturan editorial repo pada konstanta WETON_WATAK",
+        applies_to="Deskripsi singkat watak per kombinasi weton.",
+        note="Belum ditautkan ke satu pustaka primer atau sekunder tertentu; gunakan sebagai ringkasan bantu, bukan otoritas final.",
+    ),
+    JavaneseBibliographyEntry(
+        topic="Jenjem pasangan dan hari baik",
+        source_kind="internal",
+        citation="Aturan internal repo pada COMPATIBILITY_RULES dan EVENT_GUIDELINES",
+        applies_to="Kategori kecocokan pasangan dan rentang jenjem untuk acara yang didukung CLI.",
+        note="Ini adalah penyederhanaan operasional repo agar aturan bisa diaudit. Bukan klaim standar tunggal seluruh tradisi Jawa.",
+    ),
+)
+
+
+def javanese_profile_bibliography(
+    include_internal: bool = True,
+) -> tuple[JavaneseBibliographyEntry, ...]:
+    if include_internal:
+        return JAVANESE_PROFILE_BIBLIOGRAPHY
+    return tuple(
+        entry
+        for entry in JAVANESE_PROFILE_BIBLIOGRAPHY
+        if entry.source_kind != "internal"
+    )
+
+
+def manual_calculation_detail(
+    value: date | datetime | str,
+    partner: date | datetime | str | None = None,
+    events: tuple[str, ...] | list[str] | None = None,
+) -> JavaneseManualCalculation:
+    target_date = _coerce_date(value)
+    partner_date = _coerce_date(partner) if partner is not None else None
+    events_to_check = tuple(events) if events is not None else tuple(EVENT_GUIDELINES)
+    identity = javanese_calendar_cycles(target_date)
+    steps: list[JavaneseCalculationStep] = []
+    weekday_index = target_date.weekday()
+    pasaran_index = identity.days_since_epoch % len(PASARAN_NAMES)
+    pawukon_index = identity.pawukon_day - 1
+    selapan_day = identity.days_since_epoch % SELAPAN_CYCLE_DAYS + 1
+
+    steps.extend(
+        (
+            JavaneseCalculationStep(
+                section="Weton inti",
+                title="Offset hari dari epoch",
+                formula=f"({target_date.isoformat()} - {JAVANESE_CALENDAR_EPOCH.isoformat()}).days",
+                result=f"{identity.days_since_epoch} hari",
+                note="Offset yang sama dipakai untuk pasaran, pawukon, dan selapan.",
+            ),
+            JavaneseCalculationStep(
+                section="Weton inti",
+                title="Hari tujuhan",
+                formula=f"weekday index {weekday_index} -> {GREGORIAN_WEEKDAYS[weekday_index]} / {JAVANESE_DINAPITU[weekday_index]}",
+                result=f"{identity.hari} / {identity.dinapitu}",
+            ),
+            JavaneseCalculationStep(
+                section="Weton inti",
+                title="Pasaran",
+                formula=f"{identity.days_since_epoch} mod {len(PASARAN_NAMES)} = {pasaran_index}",
+                result=identity.pasaran,
+            ),
+            JavaneseCalculationStep(
+                section="Weton inti",
+                title="Neptu weton",
+                formula=f"{identity.dinapitu}({identity.hari_neptu}) + {identity.pasaran}({identity.pasaran_neptu})",
+                result=f"{identity.neptu_total}",
+            ),
+            JavaneseCalculationStep(
+                section="Weton inti",
+                title="Wuku",
+                formula=f"({identity.days_since_epoch} + {_EPOCH_PAWUKON_INDEX}) mod 210 = {pawukon_index}",
+                result=identity.wuku,
+            ),
+            JavaneseCalculationStep(
+                section="Weton inti",
+                title="Posisi selapan",
+                formula=f"({identity.days_since_epoch} mod {SELAPAN_CYCLE_DAYS}) + 1 = {selapan_day}",
+                result=f"Selapan ke-{selapan_day}",
+            ),
+        )
+    )
+
+    if identity.year_cycle is not None and identity.javanese_date is not None and identity.hijri_date is not None:
+        year_cycle = identity.year_cycle
+        day_of_year = (target_date - year_cycle.year_start_date).days
+        month_lengths = _lunar_month_lengths(year_cycle.year_length_days)
+        anchor_mode = (
+            "jangkar Asapon modern"
+            if target_date >= _ASAPON_ANCHOR_DATE
+            else "epoch Sultan Agungan"
+        )
+        steps.extend(
+            (
+                JavaneseCalculationStep(
+                    section="Siklus taun Jawa",
+                    title="Jalur jangkar hitung",
+                    formula=f"Bandingkan {target_date.isoformat()} dengan {_ASAPON_ANCHOR_DATE.isoformat()}",
+                    result=anchor_mode,
+                    note="Tanggal modern memakai jalur Asapon 1936; tanggal lebih awal dilacak dari epoch 1633.",
+                ),
+                JavaneseCalculationStep(
+                    section="Siklus taun Jawa",
+                    title="Rentang taun aktif",
+                    formula=f"{year_cycle.year_start_date.isoformat()} <= tanggal < {year_cycle.next_year_start_date.isoformat()}",
+                    result=(
+                        f"{year_cycle.year_name} {year_cycle.year_number} / "
+                        f"{year_cycle.year_type} / kurup {year_cycle.kurup_code}"
+                    ),
+                ),
+                JavaneseCalculationStep(
+                    section="Siklus taun Jawa",
+                    title="Posisi dalam windu",
+                    formula=(
+                        f"({year_cycle.year_number} - {_EPOCH_JAVANESE_YEAR}) mod {len(JAVANESE_YEAR_NAMES)} + 1 = "
+                        f"{year_cycle.windu_year_number}"
+                    ),
+                    result=f"Windu {year_cycle.windu_name}, taun ke-{year_cycle.windu_year_number}",
+                ),
+                JavaneseCalculationStep(
+                    section="Siklus taun Jawa",
+                    title="Tanggal Jawa dan Hijriyah",
+                    formula=f"Offset {day_of_year} hari ditelusuri pada panjang bulan {month_lengths}",
+                    result=f"{identity.javanese_date.formatted} / {identity.hijri_date.formatted}",
+                ),
+            )
+        )
+    else:
+        steps.append(
+            JavaneseCalculationStep(
+                section="Siklus taun Jawa",
+                title="Ketersediaan data taun",
+                formula="Tanggal berada di luar rentang kurup baku yang diimplementasikan sistem",
+                result="Nama taun, windu, dan kurup exact tidak ditampilkan",
+            )
+        )
+
+    pranata = identity.pranata_mangsa
+    cycle_start = date(pranata.cycle_start_year, 6, 22)
+    steps.extend(
+        (
+            JavaneseCalculationStep(
+                section="Pranata mangsa",
+                title="Mulai siklus mangsa",
+                formula=(
+                    f"Jika tanggal >= {pranata.cycle_start_year}-06-22 maka siklus memakai tahun {pranata.cycle_start_year}; "
+                    "jika tidak, tahun sebelumnya"
+                ),
+                result=cycle_start.isoformat(),
+            ),
+            JavaneseCalculationStep(
+                section="Pranata mangsa",
+                title="Mangsa aktif",
+                formula=f"{pranata.start_date.isoformat()} <= tanggal <= {pranata.end_date.isoformat()}",
+                result=f"{pranata.formatted} / {pranata.season} / {pranata.duration_days} hari",
+                note=pranata.candra,
+            ),
+        )
+    )
+
+    naga = identity.naga_dina
+    steps.extend(
+        (
+            JavaneseCalculationStep(
+                section="Naga dina",
+                title="Arah hari",
+                formula=f"{identity.dinapitu} -> tabel pepali arah",
+                result=_format_directions(naga.day_directions),
+            ),
+            JavaneseCalculationStep(
+                section="Naga dina",
+                title="Arah pasaran",
+                formula=f"{identity.pasaran} -> tabel pasaran",
+                result=naga.pasaran_direction,
+            ),
+            JavaneseCalculationStep(
+                section="Naga dina",
+                title="Arah varian boyongan-neptu",
+                formula=(
+                    f"({identity.neptu_total} - 1) mod {len(NAGA_DINA_NEPTU_ROTATION)} -> "
+                    f"urutan {'-'.join(NAGA_DINA_NEPTU_ROTATION)}"
+                ),
+                result=naga.neptu_cycle_direction,
+            ),
+        )
+    )
+
+    if partner_date is not None:
+        partner_identity = javanese_calendar_cycles(partner_date)
+        compatibility = compatibility_result(target_date, partner_date)
+        steps.extend(
+            (
+                JavaneseCalculationStep(
+                    section="Kecocokan pasangan",
+                    title="Neptu pasangan",
+                    formula=(
+                        f"{target_date.isoformat()} = {identity.weton_jawa}({identity.neptu_total}); "
+                        f"{partner_date.isoformat()} = {partner_identity.weton_jawa}({partner_identity.neptu_total})"
+                    ),
+                    result=f"{compatibility.first_weton} + {compatibility.second_weton}",
+                ),
+                JavaneseCalculationStep(
+                    section="Kecocokan pasangan",
+                    title="Jenjem gabungan",
+                    formula=f"{identity.neptu_total} + {partner_identity.neptu_total}",
+                    result=f"{compatibility.jenjem_sum} -> {compatibility.category}",
+                    note=compatibility.recommendation,
+                ),
+            )
+        )
+
+    for event in events_to_check:
+        guideline = EVENT_GUIDELINES[event]
+        low, high = guideline["range"]
+        advice = hari_baik_advice(target_date, event)
+        steps.append(
+            JavaneseCalculationStep(
+                section="Hari baik",
+                title=f"Acara {event}",
+                formula=f"{low} <= neptu {identity.neptu_total} <= {high}",
+                result="Baik" if advice.is_good else "Tidak baik",
+                note=f"{advice.reason} {advice.note}",
+            )
+        )
+
+    summary = (
+        f"{target_date.isoformat()} dihitung sebagai {identity.weton_jawa} dengan neptu {identity.neptu_total}, "
+        f"wuku {identity.wuku}, dan pranata mangsa {pranata.name}."
+    )
+    return JavaneseManualCalculation(
+        target_date=target_date,
+        weton_jawa=identity.weton_jawa,
+        summary=summary,
+        steps=tuple(steps),
+    )
+
+
 def javanese_calendar_cycles(value: date | datetime | str) -> JavaneseCalendarCycles:
     target_date = _coerce_date(value)
     days_since_epoch = (target_date - JAVANESE_CALENDAR_EPOCH).days
@@ -383,6 +855,7 @@ def javanese_calendar_cycles(value: date | datetime | str) -> JavaneseCalendarCy
     pawukon_index = (days_since_epoch + _EPOCH_PAWUKON_INDEX) % 210
     wuku = WUKU_NAMES[pawukon_index // 7]
     weton_jawa = f"{dinapitu} {pasaran}"
+    pranata_mangsa = _build_pranata_mangsa(target_date)
     year_cycle = javanese_year_cycle(target_date)
     if year_cycle is not None:
         javanese_date, hijri_date = _build_lunar_dates(target_date, year_cycle)
@@ -404,6 +877,7 @@ def javanese_calendar_cycles(value: date | datetime | str) -> JavaneseCalendarCy
         wuku=wuku,
         days_since_epoch=days_since_epoch,
         pawukon_day=pawukon_index + 1,
+        pranata_mangsa=pranata_mangsa,
         year_cycle=year_cycle,
         javanese_date=javanese_date,
         hijri_date=hijri_date,
@@ -435,6 +909,10 @@ def javanese_naga_dina(value: date | datetime | str) -> JavaneseNagaDina:
     return javanese_calendar_cycles(value).naga_dina
 
 
+def javanese_pranata_mangsa(value: date | datetime | str) -> JavanesePranataMangsa:
+    return javanese_calendar_cycles(value).pranata_mangsa
+
+
 def get_watak_profile(value: date | datetime | str) -> str:
     identity = javanese_calendar_cycles(value)
     return WETON_WATAK.get(identity.weton_jawa, "Kombinasi watak yang fleksibel dan adaptif.")
@@ -451,6 +929,7 @@ def javanese_day_profile(value: date | datetime | str) -> JavaneseDayProfile:
     selapan_day = identity.days_since_epoch % SELAPAN_CYCLE_DAYS + 1
     watak_profile = get_watak_profile(identity.gregorian_date)
     naga_dina = identity.naga_dina
+    pranata_mangsa = identity.pranata_mangsa
     supported_events = ("nikah", "rumah", "usaha", "tanam", "selamatan")
     event_snapshot = ", ".join(
         f"{event} {'baik' if hari_baik_advice(identity.gregorian_date, event).is_good else 'tidak'}"
@@ -458,7 +937,8 @@ def javanese_day_profile(value: date | datetime | str) -> JavaneseDayProfile:
     )
     summary = (
         f"{identity.gregorian_date.isoformat()} = {identity.weton_jawa}, "
-        f"wuku {identity.wuku}, neptu {identity.neptu_total}"
+        f"wuku {identity.wuku}, neptu {identity.neptu_total}, "
+        f"pranata mangsa {pranata_mangsa.name} ({pranata_mangsa.season})"
     )
     if identity.javanese_date is not None and identity.hijri_date is not None:
         summary += (
@@ -486,6 +966,13 @@ def javanese_day_profile(value: date | datetime | str) -> JavaneseDayProfile:
         f"{_format_directions(naga_dina.day_directions)}; {identity.pasaran} di {naga_dina.pasaran_direction}; "
         f"varian boyongan-neptu dengan jumlah {naga_dina.neptu_cycle_total} mengarah ke {naga_dina.neptu_cycle_direction}."
     )
+    pranata_mangsa_description = (
+        f"Tanggal {identity.gregorian_date.isoformat()} masuk {pranata_mangsa.formatted} "
+        f"({pranata_mangsa.season}) pada rentang {pranata_mangsa.period}. "
+        f"Candra-nya adalah '{pranata_mangsa.candra}'. Tanda alam yang biasa dikaitkan: "
+        f"{pranata_mangsa.natural_signs} Dalam praktik tani, fase ini kerap dipakai untuk "
+        f"{pranata_mangsa.farming_guidance.lower()}"
+    )
 
     common_uses = (
         JavaneseCulturalUse(
@@ -505,6 +992,11 @@ def javanese_day_profile(value: date | datetime | str) -> JavaneseDayProfile:
             category="siklus_tahun_jawa",
             description=year_cycle_description,
             example_question=f"Tahun Jawa untuk {identity.gregorian_date.isoformat()} masuk taun apa dan windu apa?",
+        ),
+        JavaneseCulturalUse(
+            category="pranata_mangsa",
+            description=pranata_mangsa_description,
+            example_question=f"Tanggal {identity.gregorian_date.isoformat()} masuk mangsa apa dalam pranata mangsa?",
         ),
         JavaneseCulturalUse(
             category="kecocokan_jodoh",
@@ -662,6 +1154,37 @@ def _build_naga_dina(
                 note=f"Dengan neptu {neptu_total}, arah sial jatuh ke {neptu_cycle_direction}.",
             ),
         ),
+    )
+
+
+def _build_pranata_mangsa(target_date: date) -> JavanesePranataMangsa:
+    cycle_start_year = target_date.year if (target_date.month, target_date.day) >= (6, 22) else target_date.year - 1
+    current_start = date(cycle_start_year, 6, 22)
+    has_leap_february = isleap(cycle_start_year + 1)
+
+    for index, definition in enumerate(PRANATA_MANGSA_DEFINITIONS, start=1):
+        duration_days = definition["duration_days"]
+        if has_leap_february and "leap_duration_days" in definition:
+            duration_days = definition["leap_duration_days"]
+
+        current_end = current_start + timedelta(days=duration_days - 1)
+        if current_start <= target_date <= current_end:
+            return JavanesePranataMangsa(
+                index=index,
+                name=definition["name"],
+                season=definition["season"],
+                candra=definition["candra"],
+                natural_signs=definition["natural_signs"],
+                farming_guidance=definition["farming_guidance"],
+                duration_days=duration_days,
+                cycle_start_year=cycle_start_year,
+                start_date=current_start,
+                end_date=current_end,
+            )
+        current_start = current_end + timedelta(days=1)
+
+    raise ValueError(
+        f"Tanggal {target_date.isoformat()} tidak masuk ke siklus pranata mangsa yang diimplementasikan."
     )
 
 

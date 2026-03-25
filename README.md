@@ -11,6 +11,7 @@ Isi repo:
 - kalkulasi kalender Jawa: hari, pasaran, weton, neptu, wuku
 - kalkulasi siklus tahun Jawa: taun, windu, kurup, dan kelanjutan angka tahun Saka
 - kalkulasi tanggal Jawa lengkap: tanggal, bulan, tahun Jawa, dan padanan Hijriyah
+- kalkulasi pranata mangsa: mangsa, musim, candra, tanda alam, dan panduan tani
 - petungan naga dina dengan varian pepali arah dan boyongan-neptu
 - ringkasan profil hari Jawa
 - hitung kecocokan jodoh berbasis jenjem
@@ -70,6 +71,12 @@ Simpan ke folder tertentu:
 javanese-profile --date 1990-04-25 --output-dir output
 ```
 
+Tampilkan jejak hitung manual dan basis sumber:
+
+```bash
+javanese-profile --date 1990-04-25 --detail-perhitungan-manual --pustaka
+```
+
 Output default akan dibuat di:
 
 ```text
@@ -78,17 +85,24 @@ output/YYYY-MM-DD.docx
 
 Jika file sudah ada, nama file akan diberi suffix otomatis seperti `-2`, `-3`, dan seterusnya.
 Untuk mode pasangan, nama file akan menjadi `output/YYYY-MM-DD-partner-YYYY-MM-DD.docx`.
-Dokumen output kini juga memuat tanggal Jawa lengkap, padanan Hijriyah, taun Jawa, windu, kurup, petungan naga dina, dan catatan bahwa angka tahun Jawa Sultan Agungan meneruskan penomoran Saka.
+Dokumen output kini juga memuat tanggal Jawa lengkap, padanan Hijriyah, pranata mangsa, taun Jawa, windu, kurup, petungan naga dina, dan catatan bahwa angka tahun Jawa Sultan Agungan meneruskan penomoran Saka.
+Flag `--detail-perhitungan-manual` menampilkan jejak formula yang dipakai sistem untuk audit riwayat hitung. Flag `--pustaka` menampilkan sumber eksternal dan aturan internal repo agar hasil tidak diperlakukan sebagai keputusan final tanpa konteks sumber.
 
 ## API Python
 
 ```python
 from research_system.commands.javanese_profile import write_profile_docx
-from research_system.utils import compatibility_result, javanese_day_profile, javanese_naga_dina
+from research_system.utils import (
+    compatibility_result,
+    javanese_day_profile,
+    javanese_naga_dina,
+    javanese_pranata_mangsa,
+)
 
 profile = javanese_day_profile("1990-04-25")
 print(profile.identity.year_cycle)
 print(javanese_naga_dina("1990-04-25").summary)
+print(javanese_pranata_mangsa("1990-04-25").formatted)
 compat = compatibility_result("2025-01-14", "2025-01-05")
 artifact = write_profile_docx("1990-04-25")
 ```
@@ -99,7 +113,7 @@ Catatan:
 - Dependensi dibuat minimal agar repo ini bisa berdiri sendiri.
 - Hitungan exact taun, windu, dan kurup diimplementasikan dengan dua jangkar sumber: epoch Sultan Agungan 8 Juli 1633 dan jangkar Asapon 25 Maret 1936, lalu diturunkan ke siklus tahun Jawa modern yang dipakai sistem.
 - Modul naga dina disimpan terpisah dari hitungan weton utama. Default sistem memakai varian pepali arah hari-pasaran, sedangkan varian boyongan-neptu tetap ditampilkan sebagai pembanding karena sumber lokal menunjukkan praktik yang tidak tunggal.
-- Ringkasan sumber analisa tersimpan di folder `docs/` sebagai markdown bertimestamp.
+- Ringkasan sumber analisa tersimpan di folder `docs/` sebagai markdown bertimestamp, termasuk catatan pranata mangsa.
 
 ## Test
 
